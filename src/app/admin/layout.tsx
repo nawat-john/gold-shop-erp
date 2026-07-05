@@ -7,6 +7,7 @@ import { logoutAction } from "@/app/login/actions";
 
 const NAV_ITEMS: { href: string; label: string; permission?: string }[] = [
   { href: "/admin", label: "ภาพรวม" },
+  { href: "/admin/prices", label: "ราคาทอง", permission: "price.view" },
   { href: "/admin/users", label: "ผู้ใช้", permission: "user.view" },
   { href: "/admin/roles", label: "บทบาท", permission: "role.manage" },
   { href: "/admin/branches", label: "สาขา", permission: "branch.manage" },

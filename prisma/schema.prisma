@@ -177,3 +177,49 @@ model Setting {
 
   @@map("settings")
 }
+
+// ───────────────────────── Phase 2: Gold Price Engine ─────────────────────────
+
+/// ราคาจาก feed ภายนอก (สมาคมค้าทองคำ) — ทุกประกาศเก็บหมด ไม่ทับของเก่า
+/// ราคาทั้งหมด: BIGINT สตางค์ ต่อ 1 บาททอง (ADR-002)
+model GoldPriceFeed {
+  id           String   @id @default(uuid())
+  /// "GTA" = สมาคมค้าทองคำ, "MANUAL" = กรอกมือเมื่อ feed ล่ม
+  source       String
+  /// เวลาประกาศของต้นทาง — คู่กับ source กันบันทึกประกาศเดิมซ้ำ
+  announcedAt  DateTime @map("announced_at")
+  fetchedAt    DateTime @default(now()) @map("fetched_at")
+  barBuy       BigInt   @map("bar_buy")
+  barSell      BigInt   @map("bar_sell")
+  ornamentBuy  BigInt   @map("ornament_buy")
+  ornamentSell BigInt   @map("ornament_sell")
+  /// payload ดิบจากต้นทาง — ไว้ debug/audit
+  raw          Json?
+
+  announcements ShopPriceAnnouncement[]
+
+  @@unique([source, announcedAt])
+  @@index([announcedAt])
+  @@map("gold_price_feeds")
+}
+
+/// ราคาประกาศหน้าร้าน (ราคากลางจาก HQ ใช้ทุกสาขา) — บิลทุกใบอ้างราคาจากตารางนี้
+/// แถวล่าสุด (announcedAt มากสุด) = ราคาปัจจุบัน; ห้ามแก้/ลบ ประกาศใหม่ทับเท่านั้น
+model ShopPriceAnnouncement {
+  id            String   @id @default(uuid())
+  announcedAt   DateTime @default(now()) @map("announced_at")
+  barBuy        BigInt   @map("bar_buy")
+  barSell       BigInt   @map("bar_sell")
+  ornamentBuy   BigInt   @map("ornament_buy")
+  ornamentSell  BigInt   @map("ornament_sell")
+  /// feed ที่ใช้อ้างอิงตอนประกาศ (null = ประกาศมือล้วน)
+  basedOnFeedId String?  @map("based_on_feed_id")
+  /// ผู้ประกาศ — ต้องมี permission price.announce
+  announcedBy   String   @map("announced_by")
+  note          String?
+
+  basedOnFeed GoldPriceFeed? @relation(fields: [basedOnFeedId], references: [id])
+
+  @@index([announcedAt])
+  @@map("shop_price_announcements")
+}

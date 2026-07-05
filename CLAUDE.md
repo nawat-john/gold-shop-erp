@@ -9,14 +9,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current State
 
-**Phases 0–1 are complete** (Foundation; Auth/RBAC/Audit/Settings). `gold-shop-erp-plan.md` is the Thai-language source of truth for scope, architecture, and phasing (Phases 0–8); update its checklists and `docs/adr/` when significant decisions are made — the owner wants progress ticked continuously, not at session end. Next up: Phase 2 (Gold Price Engine — plan §7). Known Phase 1 leftovers: role-permission editing UI (roles page is read-only), enforcing 2FA for high-privilege roles at login.
+**Phases 0–2 are complete** (Foundation; Auth/RBAC/Audit/Settings; Gold Price Engine). `gold-shop-erp-plan.md` is the Thai-language source of truth for scope, architecture, and phasing (Phases 0–8); update its checklists and `docs/adr/` when significant decisions are made — the owner wants progress ticked continuously, not at session end. Next up: Phase 3 (Inventory — plan §7). Known leftovers: role-permission editing UI (roles page is read-only), enforcing 2FA for high-privilege roles at login, price-change alerts into a notification center (module L), real Gold Traders Association feed adapter (mock only).
 
 Scope: local development only (Docker Compose), no deployment. UI language is Thai; the domain is Thai gold shops (POS buy/sell, pawn/ขายฝาก, gold savings/ออมทอง, inventory, accounting/tax, CRM+KYC, multi-branch).
 
 ## Commands
 
 - `docker compose up -d` — Postgres 16 / Redis 7 / Mailhog (required for dev and migrations)
-- `pnpm dev` (or `dev:https`), `pnpm build`
+- `pnpm dev` (or `dev:https`), `pnpm build`; `pnpm worker` — BullMQ worker (gold price fetch every 5 min; separate process, optional in dev because the admin page has a fetch-now button)
 - `pnpm lint`, `pnpm typecheck`, `pnpm format`
 - `pnpm test` (unit, fast), `pnpm test:integration` (Testcontainers, needs Docker), `pnpm test:e2e` (Playwright; starts dev server itself)
 - Run a single test file: `pnpm vitest run src/server/domain/money.test.ts`
@@ -43,6 +43,9 @@ Scope: local development only (Docker Compose), no deployment. UI language is Th
 - Integration tests boot from `tests/integration/helpers/test-db.ts` (one Postgres container per file, `fileParallelism: false`). `vitest.setup.ts` supplies fallback env for CI.
 - Dev seed creates `owner` / `ChangeMe-Owner-1` (override with `SEED_OWNER_PASSWORD`); E2E specs depend on it.
 - React 19 resets uncontrolled form fields after a server action — use controlled inputs when a form submits more than once (see `login-form.tsx`), and don't `revalidatePath` before the user has seen one-time data (recovery codes).
+- **Price snapshot**: every future transaction module must stamp bills via `buildPriceSnapshot()` (`price-snapshot.service.ts`) — JSONB format v1 with a zod schema, bigints as strings. `getCurrentShopPrice()` returns `feedStale` for the warning banner; a dead feed must never block selling.
+- External integrations hide behind adapter interfaces (see `GoldPriceFeedSource` + `MockGoldPriceFeedSource` in `src/server/prices/feed-source.ts`); job logic lives apart from the BullMQ worker (`gold-price.job.ts` vs `gold-price.worker.ts`) so the admin "fetch now" button reuses it without the queue.
+- `pnpm-workspace.yaml` pins `overrides: ioredis` — BullMQ ships its own ioredis and duplicate versions break typechecking; keep the override in sync when bumping ioredis.
 
 ## Non-negotiable Architecture Rules
 

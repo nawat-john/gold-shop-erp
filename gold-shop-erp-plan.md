@@ -359,13 +359,13 @@
 
 ### Phase 2 — Gold Price Engine (สัปดาห์ 6–7)
 
-- [ ] Schema: gold_price_feeds, shop_price_announcements (+ snapshot format มาตรฐาน)
-- [ ] Job ดึงราคาสมาคม (BullMQ, retry/backoff) + mock feed สำหรับ dev/test
-- [ ] หน้าอนุมัติ/ประกาศราคาร้าน + ประวัติ
-- [ ] Price snapshot service — ทุกโมดูลธุรกรรมต้องเรียกผ่านตัวนี้เท่านั้น
-- [ ] Price board page (route สาธารณะภายในร้าน, auto refresh, read-only token)
-- [ ] กราฟราคาย้อนหลัง + alert ราคาเปลี่ยนเกิน threshold
-- [ ] **Test:** feed ล่ม → ระบบยังขายได้ด้วยราคาประกาศล่าสุด + เตือน
+- [x] Schema: gold_price_feeds, shop_price_announcements (+ snapshot format มาตรฐาน) — ราคา BIGINT สตางค์/บาททอง, dedupe ด้วย unique(source, announcedAt)
+- [x] Job ดึงราคาสมาคม (BullMQ, retry/backoff) + mock feed สำหรับ dev/test — worker แยก process (`pnpm worker`), adapter จริงของสมาคมเสียบเพิ่มได้ผ่าน `GoldPriceFeedSource`
+- [x] หน้าอนุมัติ/ประกาศราคาร้าน + ประวัติ — /admin/prices (permission price.announce, prefill จาก feed ล่าสุด, กรอกราคามือเมื่อ feed ล่ม)
+- [x] Price snapshot service — ทุกโมดูลธุรกรรมต้องเรียกผ่านตัวนี้เท่านั้น (`buildPriceSnapshot()` format v1 มี zod schema กำกับ, bigint เก็บเป็น string ใน JSONB)
+- [x] Price board page (route สาธารณะภายในร้าน, auto refresh 15 วิ, read-only token ผ่าน setting `price_board.token`)
+- [x] กราฟราคาย้อนหลัง + alert ราคาเปลี่ยนเกิน threshold (banner ในหน้า admin + log จาก worker; แจ้งเตือนเข้า notification center = รอโมดูล L)
+- [x] **Test:** feed ล่ม → ระบบยังขายได้ด้วยราคาประกาศล่าสุด + เตือน (feedStale flag, threshold ปรับผ่าน settings)
 
 ### Phase 3 — Inventory (สัปดาห์ 8–11)
 

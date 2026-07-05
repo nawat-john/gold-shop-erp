@@ -12,6 +12,10 @@ export const PERMISSIONS = {
   "settings.view": "ดูการตั้งค่าระบบ",
   "audit.view": "ดู audit log",
   "session.revoke": "บังคับผู้ใช้ออกจากระบบ",
+
+  // Phase 2 — Gold Price Engine
+  "price.view": "ดูราคาทองและประวัติ",
+  "price.announce": "ประกาศราคาหน้าร้าน / กรอกราคา feed มือ",
 } as const;
 
 export type PermissionCode = keyof typeof PERMISSIONS;
@@ -47,21 +51,21 @@ export const SYSTEM_ROLES: Record<
     name: "ผู้จัดการสาขา",
     description:
       "บริหารสาขาตัวเอง อนุมัติรายการพิเศษ (สิทธิ์ POS มาใน Phase 4)",
-    permissions: ["user.view", "settings.view"],
+    permissions: ["user.view", "settings.view", "price.view"],
   },
   CASHIER: {
     name: "พนักงานขาย",
     description: "ซื้อ-ขายหน้าร้าน (สิทธิ์ POS มาใน Phase 4)",
-    permissions: [],
+    permissions: ["price.view"],
   },
   STOCK_KEEPER: {
     name: "พนักงานสต๊อก",
     description: "จัดการสต๊อก (สิทธิ์มาใน Phase 3)",
-    permissions: [],
+    permissions: ["price.view"],
   },
   ACCOUNTANT: {
     name: "ฝ่ายบัญชี",
     description: "บัญชีและภาษี (สิทธิ์มาใน Phase 7)",
-    permissions: ["audit.view"],
+    permissions: ["audit.view", "price.view"],
   },
 };
