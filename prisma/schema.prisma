@@ -43,6 +43,7 @@ model Branch {
   transfersIn      BranchTransfer[]  @relation("TransferTo")
   meltLots         MeltLot[]
   stockCounts      StockCount[]
+  cashDrawers      CashDrawer[]
 
   @@map("branches")
 }
@@ -302,6 +303,8 @@ model Product {
   category       ProductCategory @relation(fields: [categoryId], references: [id])
   inventoryItems InventoryItem[]
   stockMovements StockMovement[]
+  salesOrderItems    SalesOrderItem[]
+  purchaseOrderItems PurchaseOrderItem[]
 
   @@index([categoryId])
   @@map("products")
@@ -386,6 +389,8 @@ model InventoryItem {
   transferItems  BranchTransferItem[]
   meltLotItems   MeltLotItem[]
   countItems     StockCountItem[]
+  salesOrderItems    SalesOrderItem[]
+  purchaseOrderItems PurchaseOrderItem[]
 
   @@index([branchId, status])
   @@index([productId])
@@ -585,4 +590,207 @@ model StockCountItem {
 
   @@id([countId, itemId])
   @@map("stock_count_items")
+}
+
+// ───────────────────────── Phase 4: POS & Payments & Tax ─────────────────────────
+
+enum ShiftStatus {
+  OPEN
+  CLOSED
+  RECONCILED
+}
+
+model CashDrawer {
+  id        String   @id @default(uuid())
+  branchId  String   @map("branch_id")
+  code      String   // เช่น "DRAWER-01"
+  name      String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  branch Branch  @relation(fields: [branchId], references: [id])
+  shifts Shift[]
+
+  @@unique([branchId, code])
+  @@map("cash_drawers")
+}
+
+model Shift {
+  id                 String      @id @default(uuid())
+  branchId           String      @map("branch_id")
+  drawerId           String      @map("drawer_id")
+  openedById         String      @map("opened_by_id")
+  openedAt           DateTime    @default(now()) @map("opened_at")
+  closedById         String?     @map("closed_by_id")
+  closedAt           DateTime?   @map("closed_at")
+  startCashSatang    BigInt      @map("start_cash_satang")
+  endCashSatang      BigInt?     @map("end_cash_satang")
+  expectedCashSatang BigInt?     @map("expected_cash_satang")
+  reconciledAt       DateTime?   @map("reconciled_at")
+  reconciledById     String?     @map("reconciled_by_id")
+  status             ShiftStatus @default(OPEN)
+
+  drawer          CashDrawer       @relation(fields: [drawerId], references: [id])
+  salesOrders     SalesOrder[]
+  purchaseOrders  PurchaseOrder[]
+
+  @@map("shifts")
+}
+
+enum SalesOrderStatus {
+  PENDING
+  COMPLETED
+  VOIDED
+}
+
+model SalesOrder {
+  id                 String           @id @default(uuid())
+  docNo              String           @unique @map("doc_no") // จาก document_sequences
+  branchId           String           @map("branch_id")
+  shiftId            String           @map("shift_id")
+  priceSnapshot      Json             @map("price_snapshot") // snapshot ราคาทอง
+  totalAmountSatang  BigInt           @map("total_amount_satang")
+  vatAmountSatang    BigInt           @map("vat_amount_satang")
+  status             SalesOrderStatus @default(COMPLETED)
+  idempotencyKey     String?          @unique @map("idempotency_key")
+  voidedAt           DateTime?        @map("voided_at")
+  voidedById         String?          @map("voided_by_id")
+  voidReason         String?          @map("void_reason")
+  createdBy          String           @map("created_by")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+
+  shift       Shift            @relation(fields: [shiftId], references: [id])
+  items       SalesOrderItem[]
+  payments    Payment[]
+  tradeIn     TradeIn?
+  taxInvoices TaxInvoice[]
+
+  @@map("sales_orders")
+}
+
+model SalesOrderItem {
+  id                 String  @id @default(uuid())
+  orderId            String  @map("order_id")
+  productId          String  @map("product_id")
+  itemId             String? @map("item_id") // null สำหรับ COUNTED
+  quantity           Int
+  weightMg           BigInt  @map("weight_mg")
+  goldPurity         Decimal @map("gold_purity") @db.Decimal(5, 2)
+  goldPriceSatang    BigInt  @map("gold_price_satang")
+  laborChargeSatang  BigInt  @map("labor_charge_satang")
+  vatAmountSatang    BigInt  @map("vat_amount_satang")
+  totalAmountSatang  BigInt  @map("total_amount_satang")
+
+  order   SalesOrder     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product        @relation(fields: [productId], references: [id])
+  item    InventoryItem? @relation(fields: [itemId], references: [id])
+
+  @@map("sales_order_items")
+}
+
+enum PurchaseOrderStatus {
+  COMPLETED
+  VOIDED
+}
+
+model PurchaseOrder {
+  id                String              @id @default(uuid())
+  docNo             String              @unique @map("doc_no")
+  branchId          String              @map("branch_id")
+  shiftId           String              @map("shift_id")
+  priceSnapshot     Json                @map("price_snapshot")
+  totalAmountSatang BigInt              @map("total_amount_satang")
+  status            PurchaseOrderStatus @default(COMPLETED)
+  customerName      String?             @map("customer_name")
+  customerPhone     String?             @map("customer_phone")
+  customerCitizenId String?             @map("customer_citizen_id") // เลขบัตร ปชช. เข้ารหัส
+  idempotencyKey    String?             @unique @map("idempotency_key")
+  voidedAt          DateTime?           @map("voided_at")
+  voidedById        String?             @map("voided_by_id")
+  voidReason        String?             @map("void_reason")
+  createdBy         String              @map("created_by")
+  createdAt         DateTime            @default(now()) @map("created_at")
+
+  shift    Shift               @relation(fields: [shiftId], references: [id])
+  items    PurchaseOrderItem[]
+  payments Payment[]
+  tradeIn  TradeIn?
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id                String   @id @default(uuid())
+  orderId           String   @map("order_id")
+  productId         String?  @map("product_id") // null หากเป็นเศษทองชำรุดไม่มี SKU
+  itemId            String?  @map("item_id") // ชิ้นที่สร้างในคลัง (status = IN_STOCK, source = BUYBACK)
+  description       String   // เช่น "สร้อยคอขาด"
+  weightMg          BigInt   @map("weight_mg")
+  goldPurity        Decimal  @map("gold_purity") @db.Decimal(5, 2)
+  unitPriceSatang   BigInt   @map("unit_price_satang")
+  totalAmountSatang BigInt   @map("total_amount_satang")
+
+  order   PurchaseOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product?       @relation(fields: [productId], references: [id])
+  item    InventoryItem? @relation(fields: [itemId], references: [id])
+
+  @@map("purchase_order_items")
+}
+
+model TradeIn {
+  id                String   @id @default(uuid())
+  docNo             String   @unique @map("doc_no")
+  salesOrderId      String   @unique @map("sales_order_id")
+  purchaseOrderId   String   @unique @map("purchase_order_id")
+  netAmountSatang   BigInt   @map("net_amount_satang") // ยอดสุทธิ (+ ลูกค้าจ่ายเพิ่ม / - ร้านจ่ายคืน)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  salesOrder    SalesOrder    @relation(fields: [salesOrderId], references: [id])
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  payments      Payment[]
+
+  @@map("trade_ins")
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  CREDIT_CARD
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  salesOrderId    String?       @map("sales_order_id")
+  purchaseOrderId String?       @map("purchase_order_id")
+  tradeInId       String?       @map("trade_in_id")
+  paymentMethod   PaymentMethod @map("payment_method")
+  amountSatang    BigInt        @map("amount_satang")
+  feeSatang       BigInt        @default(0) @map("fee_satang") // ค่าธรรมเนียมบัตรเครดิต
+  referenceNo     String?       @map("reference_no") // เลขที่ธุรกรรม/เลขอ้างอิงโอน
+  slipPath        String?       @map("slip_path") // ที่อยู่ไฟล์รูปหลักฐานโอน
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  salesOrder    SalesOrder?    @relation(fields: [salesOrderId], references: [id])
+  purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+  tradeIn       TradeIn?       @relation(fields: [tradeInId], references: [id])
+
+  @@map("payments")
+}
+
+model TaxInvoice {
+  id              String   @id @default(uuid())
+  docNo           String   @unique @map("doc_no")
+  salesOrderId    String   @map("sales_order_id")
+  customerName    String   @map("customer_name")
+  customerAddress String?  @map("customer_address")
+  customerTaxId   String?  @map("customer_tax_id")
+  isFull          Boolean  @default(false) @map("is_full") // true = เต็มรูป, false = อย่างย่อ
+  createdBy       String   @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id])
+
+  @@map("tax_invoices")
 }

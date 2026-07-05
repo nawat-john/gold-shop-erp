@@ -381,17 +381,17 @@
 
 ### Phase 4 — POS ซื้อ-ขาย + ชำระเงิน + ภาษี (สัปดาห์ 12–16) ★ หัวใจระบบ
 
-- [ ] Schema: sales_orders/items, purchase_orders/items, trade_ins, payments, tax_invoices, shifts, cash_drawers
-- [ ] Pricing service: ขายรูปพรรณ/แท่ง, รับซื้อ (ทองร้าน/ทองนอก), ค่ากำเหน็จ rule engine — pure functions + test ครอบทุกสูตร
-- [ ] VAT ร้านทอง (ฐานส่วนต่าง/ค่ากำเหน็จ) + ใบกำกับอย่างย่อ/เต็มรูป + running number
-- [ ] หน้า POS ขาย: สแกน → ตะกร้า → ส่วนลด (limit ตาม role) → ชำระหลายช่องทาง → พิมพ์
-- [ ] หน้ารับซื้อทองเก่า: ชั่งน้ำหนัก, เลือกเรต, ถ่ายรูป, จ่ายเงิน (เชื่อม AMLO check เบื้องต้น)
-- [ ] Trade-in บิลผสมซื้อ+ขาย คำนวณส่วนต่าง
-- [ ] Idempotency key ที่จุด submit บิล/ชำระเงิน
-- [ ] Void/คืนสินค้า (reversal document + คืนสต๊อก + กลับรายการบัญชี) พร้อมอนุมัติ
-- [ ] Shift: เปิด/ปิดกะ, นับเงิน, กระทบยอดเงิน+น้ำหนักทอง, รายงานปิดวัน
-- [ ] Print service: slip 80mm (ESC/POS) + ใบกำกับ/ใบรับประกัน PDF + retry queue
-- [ ] **Test:** golden test สูตรราคา/ภาษีเทียบกับเคสจริงที่คำนวณมือ, E2E ขาย-รับซื้อ-เปลี่ยน-void ครบ loop, ปิดกะยอดต้อง reconcile ลงตัว
+- [x] Schema: sales_orders/items, purchase_orders/items, trade_ins, payments, tax_invoices, shifts, cash_drawers
+- [x] Pricing service: ขายรูปพรรณ/แท่ง, รับซื้อ (ทองร้าน/ทองนอก), ค่ากำเหน็จ rule engine — pure functions + test ครอบทุกสูตร
+- [x] VAT ร้านทอง (ฐานส่วนต่าง/ค่ากำเหน็จ) + ใบกำกับอย่างย่อ/เต็มรูป + running number
+- [x] หน้า POS ขาย: สแกน → ตะกร้า → ส่วนลด (limit ตาม role) → ชำระหลายช่องทาง → พิมพ์
+- [x] หน้ารับซื้อทองเก่า: ชั่งน้ำหนัก, เลือกเรต, ถ่ายรูป, จ่ายเงิน (เชื่อม AMLO check เบื้องต้น)
+- [x] Trade-in บิลผสมซื้อ+ขาย คำนวณส่วนต่าง
+- [x] Idempotency key ที่จุด submit บิล/ชำระเงิน
+- [x] Void/คืนสินค้า (reversal document + คืนสต๊อก + กลับรายการบัญชี) พร้อมอนุมัติ
+- [x] Shift: เปิด/ปิดกะ, นับเงิน, กระทบยอดเงิน+น้ำหนักทอง, รายงานปิดวัน
+- [x] Print service: slip 80mm (ESC/POS) + ใบกำกับ/ใบรับประกัน PDF + retry queue
+- [x] **Test:** golden test สูตรราคา/ภาษีเทียบกับเคสจริงที่คำนวณมือ, E2E ขาย-รับซื้อ-เปลี่ยน-void ครบ loop, ปิดกะยอดต้อง reconcile ลงตัว
 
 ### Phase 5 — ขายฝาก (Pawn) (สัปดาห์ 17–20) ★ ตัวสร้างรายได้หลักของหลายร้าน
 

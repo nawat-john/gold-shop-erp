@@ -74,7 +74,7 @@ export const SYSTEM_ROLES: Record<
   CASHIER: {
     name: "พนักงานขาย",
     description: "ซื้อ-ขายหน้าร้าน (สิทธิ์ POS มาใน Phase 4)",
-    permissions: ["price.view"],
+    permissions: ["price.view", "stock.view", "stock.count"],
   },
   STOCK_KEEPER: {
     name: "พนักงานสต๊อก",
