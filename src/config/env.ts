@@ -11,6 +11,10 @@ const envSchema = z.object({
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace"])
     .default("info"),
+  /// กุญแจ AES-256-GCM สำหรับ field อ่อนไหว (TOTP secret, เลขบัตร ปชช.) — 32 bytes hex
+  ENCRYPTION_KEY: z
+    .string()
+    .regex(/^[0-9a-f]{64}$/i, "ต้องเป็น hex 64 ตัวอักษร (32 bytes)"),
 });
 
 export type Env = z.infer<typeof envSchema>;

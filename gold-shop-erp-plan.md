@@ -346,16 +346,16 @@
 
 ### Phase 1 — Auth, RBAC, Audit, Settings (สัปดาห์ 3–5)
 
-- [ ] Schema: users, roles, permissions, branches, user_branch_roles, audit_logs, settings, document_sequences
-- [ ] Login (Argon2id) + lockout + rate limit
-- [ ] TOTP 2FA (enroll, verify, recovery codes)
-- [ ] Session management + idle/absolute timeout + revoke
-- [ ] Permission middleware (deny-by-default) + branch scoping ใน repository
-- [ ] Step-up PIN อนุมัติ (maker-checker primitive ให้โมดูลอื่นเรียกใช้)
-- [ ] Audit log service (append-only + DB permission กัน UPDATE/DELETE) — ผูกกับ mutation ทุกตัวผ่าน helper เดียว
-- [ ] หน้า Admin: จัดการผู้ใช้/บทบาท/สาขา/ตั้งค่า
-- [ ] Document sequence service (transactional, no-gap สำหรับใบกำกับ)
-- [ ] **Test สำคัญ:** authorization matrix test, concurrency test เลขที่เอกสาร (ยิงพร้อมกัน 100 requests ห้ามซ้ำ/ข้าม)
+- [x] Schema: users, roles, permissions, branches, user_branch_roles, audit_logs, settings, document_sequences (+ sessions, recovery_codes; audit_logs append-only ด้วย Postgres trigger)
+- [x] Login (Argon2id) + lockout + rate limit (per-IP + per-username, Redis fixed-window; lockout 5 ครั้ง/15 นาที; timing-safe dummy verify)
+- [x] TOTP 2FA (enroll, verify, recovery codes) — otplib v13, secret เข้ารหัส AES-256-GCM, recovery 10 ชุดใช้ครั้งเดียว
+- [x] Session management + idle/absolute timeout + revoke (DB-backed session เขียนเอง — เหตุผลใน ADR-003; integration test ครบ 7 path)
+- [x] Permission middleware (deny-by-default) + branch scoping ใน repository — `requirePermission()` + catalog ใน `src/server/auth/permissions.ts`
+- [x] Step-up PIN อนุมัติ (maker-checker primitive ให้โมดูลอื่นเรียกใช้) — `requireApproval()` รองรับ requireDifferentApprover
+- [x] Audit log service (append-only บังคับด้วย Postgres trigger กัน UPDATE/DELETE/TRUNCATE) — `writeAuditLog()` helper เดียว
+- [x] หน้า Admin: จัดการผู้ใช้/บทบาท/สาขา/ตั้งค่า + audit viewer + โปรไฟล์ (เปลี่ยนรหัส/เปิด-ปิด 2FA) — หน้า role ยัง read-only (แก้สิทธิ์รายบทบาท = backlog Phase ถัดไป)
+- [x] Document sequence service (transactional, no-gap สำหรับใบกำกับ) — ทำแล้วตั้งแต่ Phase 0 พร้อม concurrency test 100 requests
+- [x] **Test สำคัญ:** authorization matrix test (ทุก role × ทุก permission), concurrency test เลขที่เอกสาร (ยิงพร้อมกัน 100 requests ห้ามซ้ำ/ข้าม)
 
 ### Phase 2 — Gold Price Engine (สัปดาห์ 6–7)
 

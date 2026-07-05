@@ -18,15 +18,18 @@ cp .env.example .env
 # 3. เปิด infrastructure (PostgreSQL 16, Redis 7, Mailhog)
 docker compose up -d
 
-# 4. สร้าง Prisma client + รัน migration
+# 4. สร้าง Prisma client + รัน migration + seed
 pnpm db:generate
 pnpm db:migrate
+pnpm prisma db seed
 
 # 5. รันแอป
 pnpm dev
 ```
 
 เปิด <http://localhost:3000> — Mailhog UI อยู่ที่ <http://localhost:8025>
+
+บัญชีเริ่มต้นจาก seed (dev เท่านั้น): `owner` / `ChangeMe-Owner-1` (เปลี่ยนได้ผ่าน env `SEED_OWNER_PASSWORD`) — เปลี่ยนรหัสผ่านทันทีหลัง login ที่หน้า "โปรไฟล์"
 
 ## คำสั่งที่ใช้บ่อย
 

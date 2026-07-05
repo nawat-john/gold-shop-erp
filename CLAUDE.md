@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current State
 
-**Phase 0 (Foundation) is complete.** `gold-shop-erp-plan.md` is the Thai-language source of truth for scope, architecture, and phasing (Phases 0–8); update its checklists and `docs/adr/` when significant decisions are made. Next up: Phase 1 (Auth, RBAC, Audit, Settings — plan §7).
+**Phases 0–1 are complete** (Foundation; Auth/RBAC/Audit/Settings). `gold-shop-erp-plan.md` is the Thai-language source of truth for scope, architecture, and phasing (Phases 0–8); update its checklists and `docs/adr/` when significant decisions are made — the owner wants progress ticked continuously, not at session end. Next up: Phase 2 (Gold Price Engine — plan §7). Known Phase 1 leftovers: role-permission editing UI (roles page is read-only), enforcing 2FA for high-privilege roles at login.
 
 Scope: local development only (Docker Compose), no deployment. UI language is Thai; the domain is Thai gold shops (POS buy/sell, pawn/ขายฝาก, gold savings/ออมทอง, inventory, accounting/tax, CRM+KYC, multi-branch).
 
@@ -29,13 +29,20 @@ Scope: local development only (Docker Compose), no deployment. UI language is Th
 - **Prisma 7**: config lives in `prisma.config.ts` (not the schema datasource block); client is generated to `src/generated/prisma` (gitignored — run `pnpm db:generate` after clone/schema change); instantiation requires the driver adapter: `new PrismaClient({ adapter: new PrismaPg({ connectionString }) })`. Use the `prisma` singleton from `src/server/db.ts`.
 - pnpm 11 blocks dependency build scripts — approve new ones in `pnpm-workspace.yaml` `allowBuilds`.
 - Layout: `src/config/env.ts` (zod-validated env, server-only), `src/lib/logger.ts` (pino with PII redact paths — extend when adding sensitive fields), `src/server/domain|services|repositories`, integration tests in `tests/integration/`, E2E in `tests/e2e/`.
-- Not yet installed (add when the phase needs them): shadcn/ui, TanStack Query/Table, React Hook Form, BullMQ, Auth.js, otplib, argon2.
+- Not yet installed (add when the phase needs them): shadcn/ui, TanStack Query/Table, React Hook Form, BullMQ.
+- Auth is **hand-rolled DB sessions, not NextAuth** — see docs/adr/ADR-003 for why (credentials provider forces non-revocable JWT). otplib is v13 (async top-level `generate`/`verify`/`generateSecret`, `counterTolerance` option — the `authenticator` export no longer exists).
 
 ## Established Patterns (copy these, don't reinvent)
 
 - Money/weight primitives: `src/server/domain/money.ts` (`Satang` = bigint satang, `mulDivRoundHalfUp` for VAT/ratios, parse via `satangFromBahtString` — rejects excess precision, never silently rounds) and `src/server/domain/gold.ts` (`Milligrams` = bigint mg). See docs/adr/ADR-002.
 - Document numbers: `src/server/services/document-number.service.ts` — allocate inside the same `prisma.$transaction` as the document insert (atomic upsert holds the row lock; rollback returns the number, guaranteeing no gaps). Its Testcontainers test (`tests/integration/document-number.test.ts`) is the template for concurrency tests: real Postgres container + `prisma migrate deploy` + parallel transactions.
 - Every request carries `x-request-id` (set in `src/middleware.ts`) — thread it into logs/audit records.
+- **Server action pattern** (see `src/app/admin/users/actions.ts`): `requireSession()` → `requirePermission(prisma, userId, code, branchId?)` → zod safeParse → `prisma.$transaction(mutation + writeAuditLog)` → `revalidatePath`. Permission catalog lives in `src/server/auth/permissions.ts`; new permissions are seeded by `seedRbac` (idempotent, shared with tests).
+- Privileged actions use `requireApproval()` (`approval.service.ts`) — approver PIN + permission check + `requireDifferentApprover` for maker-checker.
+- Sensitive fields: encrypt with `encryptString` (AES-256-GCM) + store `hmacHash` alongside when lookup is needed (see `totpSecretEnc`, recovery codes).
+- Integration tests boot from `tests/integration/helpers/test-db.ts` (one Postgres container per file, `fileParallelism: false`). `vitest.setup.ts` supplies fallback env for CI.
+- Dev seed creates `owner` / `ChangeMe-Owner-1` (override with `SEED_OWNER_PASSWORD`); E2E specs depend on it.
+- React 19 resets uncontrolled form fields after a server action — use controlled inputs when a form submits more than once (see `login-form.tsx`), and don't `revalidatePath` before the user has seen one-time data (recovery codes).
 
 ## Non-negotiable Architecture Rules
 
