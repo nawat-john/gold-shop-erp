@@ -16,6 +16,14 @@ export const PERMISSIONS = {
   // Phase 2 — Gold Price Engine
   "price.view": "ดูราคาทองและประวัติ",
   "price.announce": "ประกาศราคาหน้าร้าน / กรอกราคา feed มือ",
+
+  // Phase 3 — Inventory
+  "stock.view": "ดูรายการสินค้าและสต๊อกสินค้า",
+  "stock.receive": "รับสินค้าเข้าจาก Supplier",
+  "stock.transfer": "จัดการการโอนย้ายสินค้าข้ามสาขา",
+  "stock.count": "สร้างและตรวจนับสต๊อกสินค้า",
+  "stock.adjust": "ปรับปรุงยอดสต๊อกสินค้า (ต้องการ PIN ผู้อนุมัติ)",
+  "stock.melt": "จัดการส่งทองเก่าหลอม/คืนโรงงาน",
 } as const;
 
 export type PermissionCode = keyof typeof PERMISSIONS;
@@ -51,7 +59,17 @@ export const SYSTEM_ROLES: Record<
     name: "ผู้จัดการสาขา",
     description:
       "บริหารสาขาตัวเอง อนุมัติรายการพิเศษ (สิทธิ์ POS มาใน Phase 4)",
-    permissions: ["user.view", "settings.view", "price.view"],
+    permissions: [
+      "user.view",
+      "settings.view",
+      "price.view",
+      "stock.view",
+      "stock.receive",
+      "stock.transfer",
+      "stock.count",
+      "stock.adjust",
+      "stock.melt",
+    ],
   },
   CASHIER: {
     name: "พนักงานขาย",
@@ -61,7 +79,14 @@ export const SYSTEM_ROLES: Record<
   STOCK_KEEPER: {
     name: "พนักงานสต๊อก",
     description: "จัดการสต๊อก (สิทธิ์มาใน Phase 3)",
-    permissions: ["price.view"],
+    permissions: [
+      "price.view",
+      "stock.view",
+      "stock.receive",
+      "stock.transfer",
+      "stock.count",
+      "stock.melt",
+    ],
   },
   ACCOUNTANT: {
     name: "ฝ่ายบัญชี",

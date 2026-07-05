@@ -370,14 +370,14 @@
 ### Phase 3 — Inventory (สัปดาห์ 8–11)
 
 - [x] Schema: categories, products, inventory_items, stock_movements (ledger), storage_locations, labels (+ suppliers, branch_transfers, melt_lots, stock_counts — ledger append-only ด้วย trigger, CHECK น้ำหนัก/ต้นทุน/เครื่องหมาย quantity ระดับ DB)
-- [ ] รับสินค้าเข้า (จาก supplier) + ต้นทุน + พิมพ์ป้าย barcode/QR
-- [ ] Serialized item lifecycle: in_stock → sold/pawned/melted/in_transit/missing (state machine + partial unique index)
-- [ ] ค้นหา/สแกนสินค้า (keyboard-first, debounce, ล็อกชิ้นเมื่อถูกดึงเข้าบิล)
-- [ ] โอนย้ายระหว่างตู้/สาขา แบบ 2-step confirm
-- [ ] ตรวจนับสต๊อก: สร้างรอบ, สแกน, ผลต่าง, อนุมัติปรับปรุง (step-up PIN)
-- [ ] Melt lot (ส่งหลอม/คืนโรงงาน)
-- [ ] Mark-to-market valuation report
-- [ ] **Test:** concurrency ขายชิ้นเดียวกันพร้อมกัน 2 เครื่อง → สำเร็จเครื่องเดียว; ledger replay ต้องได้ยอดตรงกับสถานะรายชิ้นเสมอ
+- [x] รับสินค้าเข้า (จาก supplier) + ต้นทุน + พิมพ์ป้าย barcode/QR
+- [x] Serialized item lifecycle: in_stock → sold/pawned/melted/in_transit/missing (state machine + partial unique index)
+- [x] ค้นหา/สแกนสินค้า (keyboard-first, debounce, ล็อกชิ้นเมื่อถูกดึงเข้าบิล)
+- [x] โอนย้ายระหว่างตู้/สาขา แบบ 2-step confirm
+- [x] ตรวจนับสต๊อก: สร้างรอบ, สแกน, ผลต่าง, อนุมัติปรับปรุง (step-up PIN)
+- [x] Melt lot (ส่งหลอม/คืนโรงงาน)
+- [x] Mark-to-market valuation report
+- [x] **Test:** concurrency ขายชิ้นเดียวกันพร้อมกัน 2 เครื่อง → สำเร็จเครื่องเดียว; ledger replay ต้องได้ยอดตรงกับสถานะรายชิ้นเสมอ
 
 ### Phase 4 — POS ซื้อ-ขาย + ชำระเงิน + ภาษี (สัปดาห์ 12–16) ★ หัวใจระบบ
 
