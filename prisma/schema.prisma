@@ -35,7 +35,14 @@ model Branch {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  userBranchRoles UserBranchRole[]
+  userBranchRoles  UserBranchRole[]
+  storageLocations StorageLocation[]
+  inventoryItems   InventoryItem[]
+  stockMovements   StockMovement[]
+  transfersOut     BranchTransfer[]  @relation("TransferFrom")
+  transfersIn      BranchTransfer[]  @relation("TransferTo")
+  meltLots         MeltLot[]
+  stockCounts      StockCount[]
 
   @@map("branches")
 }
@@ -222,4 +229,360 @@ model ShopPriceAnnouncement {
 
   @@index([announcedAt])
   @@map("shop_price_announcements")
+}
+
+// ───────────────────────── Phase 3: Inventory ─────────────────────────
+// กติกาสำคัญ:
+// - สินค้ารายชิ้น (SERIALIZED เช่น ทองรูปพรรณ) = 1 แถว inventory_items ต่อชิ้น, serialNo ไม่ซ้ำ
+// - สินค้านับจำนวน (COUNTED เช่น ทองแท่งมาตรฐาน) ไม่มีแถวรายชิ้น — ยอดคงเหลือ derive จาก ledger
+// - stock_movements เป็น ledger แบบ append-only (มี trigger กัน UPDATE/DELETE เหมือน audit_logs)
+//   ยอดคงเหลือทุกชนิดต้อง replay จาก ledger แล้วตรงกับสถานะรายชิ้นเสมอ (invariant job Phase 8)
+
+/// ผู้ขายส่ง/โรงงาน — master data
+model Supplier {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  phone     String?
+  address   String?
+  note      String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  inventoryItems InventoryItem[]
+
+  @@map("suppliers")
+}
+
+/// หมวดสินค้า (สร้อยคอ/แหวน/กำไล/ทองแท่ง...) + ค่ากำเหน็จ default ของหมวด
+model ProductCategory {
+  id                 String   @id @default(uuid())
+  code               String   @unique
+  name               String
+  /// ค่ากำเหน็จ default สตางค์/ชิ้น (override ได้ที่ product และรายชิ้น)
+  defaultLaborCharge BigInt?  @map("default_labor_charge")
+  isActive           Boolean  @default(true) @map("is_active")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  products Product[]
+
+  @@map("product_categories")
+}
+
+/// วิธีติดตามสต๊อกของสินค้า
+enum ProductTracking {
+  /// รายชิ้น — ทองรูปพรรณทุกชิ้นมีป้ายเลขไม่ซ้ำ
+  SERIALIZED
+  /// นับจำนวน — ทองแท่งมาตรฐานน้ำหนักตายตัว
+  COUNTED
+}
+
+/// แบบสินค้า (SKU) — ชิ้นจริงอยู่ที่ inventory_items
+model Product {
+  id          String          @id @default(uuid())
+  sku         String          @unique
+  name        String
+  categoryId  String          @map("category_id")
+  tracking    ProductTracking
+  /// % ความบริสุทธิ์ เช่น 96.50 (ค่า default ของแบบ — ชิ้นจริง override ได้)
+  goldPurity  Decimal         @map("gold_purity") @db.Decimal(5, 2)
+  /// น้ำหนักมาตรฐาน มก./หน่วย (จำเป็นสำหรับ COUNTED; SERIALIZED ใช้น้ำหนักชั่งจริงรายชิ้น)
+  stdWeightMg BigInt?         @map("std_weight_mg")
+  /// ค่ากำเหน็จ default สตางค์/ชิ้น (override ค่าหมวด)
+  laborCharge BigInt?         @map("labor_charge")
+  /// ลาย เช่น "สร้อยลายผ่าหวาย"
+  pattern     String?
+  photoPath   String?         @map("photo_path")
+  isActive    Boolean         @default(true) @map("is_active")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  category       ProductCategory @relation(fields: [categoryId], references: [id])
+  inventoryItems InventoryItem[]
+  stockMovements StockMovement[]
+
+  @@index([categoryId])
+  @@map("products")
+}
+
+/// ตำแหน่งจัดเก็บในสาขา: ตู้โชว์/ถาด/เซฟ
+enum StorageKind {
+  SHOWCASE
+  TRAY
+  SAFE
+  OTHER
+}
+
+model StorageLocation {
+  id        String      @id @default(uuid())
+  branchId  String      @map("branch_id")
+  code      String
+  name      String
+  kind      StorageKind @default(SHOWCASE)
+  isActive  Boolean     @default(true) @map("is_active")
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  branch         Branch          @relation(fields: [branchId], references: [id])
+  inventoryItems InventoryItem[]
+
+  @@unique([branchId, code])
+  @@map("storage_locations")
+}
+
+/// สถานะชิ้นทอง — state machine (transition ถูกบังคับที่ service layer + ledger)
+enum ItemStatus {
+  IN_STOCK
+  /// ถูกดึงเข้าบิลที่ยังไม่จ่ายเงิน (กันสองเครื่องขายชิ้นเดียวกัน)
+  RESERVED
+  SOLD
+  PAWNED_COLLATERAL
+  IN_TRANSIT
+  MELTED
+  MISSING
+}
+
+/// ที่มาของชิ้นทอง
+enum AcquisitionSource {
+  /// รับใหม่จาก supplier/โรงงาน
+  SUPPLIER
+  /// รับซื้อทองเก่าหน้าร้าน (Phase 4)
+  BUYBACK
+  /// ทองหลุดขายฝาก (Phase 5)
+  PAWN_FORFEIT
+}
+
+/// ชิ้นทองจริง (เฉพาะสินค้า SERIALIZED)
+model InventoryItem {
+  id          String            @id @default(uuid())
+  /// เลขป้ายทอง — ไม่ซ้ำทั้งระบบ ใช้พิมพ์ barcode/QR
+  serialNo    String            @unique @map("serial_no")
+  productId   String            @map("product_id")
+  branchId    String            @map("branch_id")
+  status      ItemStatus        @default(IN_STOCK)
+  /// น้ำหนักชั่งจริง มก.
+  weightMg    BigInt            @map("weight_mg")
+  goldPurity  Decimal           @map("gold_purity") @db.Decimal(5, 2)
+  /// ต้นทุน สตางค์ (ทองหลุด = เงินต้นค้าง; รับซื้อ = ราคาที่จ่ายจริง)
+  costSatang  BigInt            @map("cost_satang")
+  /// ค่ากำเหน็จขาย สตางค์ (override product/category)
+  laborCharge BigInt?           @map("labor_charge")
+  source      AcquisitionSource @default(SUPPLIER)
+  supplierId  String?           @map("supplier_id")
+  locationId  String?           @map("location_id")
+  photoPath   String?           @map("photo_path")
+  receivedAt  DateTime          @default(now()) @map("received_at")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  product        Product              @relation(fields: [productId], references: [id])
+  branch         Branch               @relation(fields: [branchId], references: [id])
+  supplier       Supplier?            @relation(fields: [supplierId], references: [id])
+  location       StorageLocation?     @relation(fields: [locationId], references: [id])
+  labels         ProductLabel[]
+  stockMovements StockMovement[]
+  transferItems  BranchTransferItem[]
+  meltLotItems   MeltLotItem[]
+  countItems     StockCountItem[]
+
+  @@index([branchId, status])
+  @@index([productId])
+  @@map("inventory_items")
+}
+
+/// ประวัติพิมพ์ป้ายทอง — พิมพ์ซ้ำได้ ทุกครั้งมีบันทึก (ป้ายจริงใช้ serialNo ของชิ้น)
+model ProductLabel {
+  id        String   @id @default(uuid())
+  itemId    String   @map("item_id")
+  printedBy String   @map("printed_by")
+  printedAt DateTime @default(now()) @map("printed_at")
+  /// เหตุผลพิมพ์ซ้ำ (ป้ายหลุด/ชำรุด) — null = พิมพ์ครั้งแรก
+  reason    String?
+
+  item InventoryItem @relation(fields: [itemId], references: [id])
+
+  @@index([itemId])
+  @@map("product_labels")
+}
+
+/// ประเภทการเคลื่อนไหวสต๊อก
+enum StockMovementType {
+  RECEIVE_SUPPLIER
+  BUYBACK_IN
+  PAWN_FORFEIT_IN
+  SALE_OUT
+  TRANSFER_OUT
+  TRANSFER_IN
+  MELT_OUT
+  COUNT_ADJUST_IN
+  COUNT_ADJUST_OUT
+  MANUAL_ADJUST_IN
+  MANUAL_ADJUST_OUT
+}
+
+/// Ledger การเคลื่อนไหวสต๊อก — append-only (DB trigger กัน UPDATE/DELETE/TRUNCATE)
+/// SERIALIZED: quantity = ±1 + itemId; COUNTED: quantity = ±n, itemId = null
+model StockMovement {
+  id           BigInt            @id @default(autoincrement())
+  movementType StockMovementType @map("movement_type")
+  branchId     String            @map("branch_id")
+  productId    String            @map("product_id")
+  itemId       String?           @map("item_id")
+  /// +รับเข้า / -ตัดออก (ห้ามเป็น 0 — CHECK ระดับ DB)
+  quantity     Int
+  /// น้ำหนักรวมของการเคลื่อนไหว มก. (เครื่องหมายเดียวกับ quantity)
+  weightMg     BigInt            @map("weight_mg")
+  /// ต้นทุนของการเคลื่อนไหว สตางค์ (ถ้ามี)
+  costSatang   BigInt?           @map("cost_satang")
+  /// เอกสารอ้างอิง เช่น ("branch_transfer", id) / ("stock_count", id)
+  refType      String?           @map("ref_type")
+  refId        String?           @map("ref_id")
+  actorId      String            @map("actor_id")
+  requestId    String?           @map("request_id")
+  note         String?
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  branch  Branch         @relation(fields: [branchId], references: [id])
+  product Product        @relation(fields: [productId], references: [id])
+  item    InventoryItem? @relation(fields: [itemId], references: [id])
+
+  @@index([branchId, productId, createdAt])
+  @@index([itemId])
+  @@index([refType, refId])
+  @@map("stock_movements")
+}
+
+/// โอนย้ายระหว่างสาขา — 2-step confirm (ส่งยืนยัน → รับยืนยัน)
+enum TransferStatus {
+  DRAFT
+  IN_TRANSIT
+  COMPLETED
+  CANCELLED
+}
+
+model BranchTransfer {
+  id           String         @id @default(uuid())
+  /// เลขที่เอกสาร จาก document_sequences
+  docNo        String         @unique @map("doc_no")
+  fromBranchId String         @map("from_branch_id")
+  toBranchId   String         @map("to_branch_id")
+  status       TransferStatus @default(DRAFT)
+  createdBy    String         @map("created_by")
+  sentBy       String?        @map("sent_by")
+  sentAt       DateTime?      @map("sent_at")
+  receivedBy   String?        @map("received_by")
+  receivedAt   DateTime?      @map("received_at")
+  note         String?
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  fromBranch Branch               @relation("TransferFrom", fields: [fromBranchId], references: [id])
+  toBranch   Branch               @relation("TransferTo", fields: [toBranchId], references: [id])
+  items      BranchTransferItem[]
+
+  @@index([fromBranchId, status])
+  @@index([toBranchId, status])
+  @@map("branch_transfers")
+}
+
+model BranchTransferItem {
+  transferId String @map("transfer_id")
+  itemId     String @map("item_id")
+
+  transfer BranchTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  item     InventoryItem  @relation(fields: [itemId], references: [id])
+
+  @@id([transferId, itemId])
+  @@map("branch_transfer_items")
+}
+
+/// รอบส่งหลอม/คืนโรงงาน — รวมทองเก่า ชั่งน้ำหนักส่ง-รับ ดูผลต่าง
+enum MeltLotStatus {
+  OPEN
+  SENT
+  CLOSED
+  CANCELLED
+}
+
+model MeltLot {
+  id               String        @id @default(uuid())
+  docNo            String        @unique @map("doc_no")
+  branchId         String        @map("branch_id")
+  status           MeltLotStatus @default(OPEN)
+  /// น้ำหนักรวมตอนส่ง มก. (ชั่งจริงตอนปิดรอบส่ง)
+  sentWeightMg     BigInt?       @map("sent_weight_mg")
+  /// น้ำหนัก/มูลค่าที่ได้รับคืนจากโรงงาน
+  returnedWeightMg BigInt?       @map("returned_weight_mg")
+  returnedSatang   BigInt?       @map("returned_satang")
+  createdBy        String        @map("created_by")
+  sentAt           DateTime?     @map("sent_at")
+  closedAt         DateTime?     @map("closed_at")
+  note             String?
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  branch Branch        @relation(fields: [branchId], references: [id])
+  items  MeltLotItem[]
+
+  @@index([branchId, status])
+  @@map("melt_lots")
+}
+
+model MeltLotItem {
+  lotId  String @map("lot_id")
+  itemId String @map("item_id")
+
+  lot  MeltLot       @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  item InventoryItem @relation(fields: [itemId], references: [id])
+
+  @@id([lotId, itemId])
+  @@map("melt_lot_items")
+}
+
+/// รอบตรวจนับสต๊อก — ปรับปรุงผลต่างต้องผ่านอนุมัติ (step-up PIN)
+enum StockCountStatus {
+  OPEN
+  REVIEW
+  APPROVED
+  CANCELLED
+}
+
+model StockCount {
+  id         String           @id @default(uuid())
+  docNo      String           @unique @map("doc_no")
+  branchId   String           @map("branch_id")
+  status     StockCountStatus @default(OPEN)
+  createdBy  String           @map("created_by")
+  approvedBy String?          @map("approved_by")
+  startedAt  DateTime         @default(now()) @map("started_at")
+  closedAt   DateTime?        @map("closed_at")
+  note       String?
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+
+  branch Branch           @relation(fields: [branchId], references: [id])
+  items  StockCountItem[]
+
+  @@index([branchId, status])
+  @@map("stock_counts")
+}
+
+/// ผลนับรายชิ้น: expected จาก DB ณ เวลาเปิดรอบ, counted จากการสแกนจริง
+model StockCountItem {
+  countId   String    @map("count_id")
+  itemId    String    @map("item_id")
+  /// สถานะที่ระบบคาดไว้ตอนเปิดรอบ
+  expected  Boolean   @default(true)
+  /// สแกนพบจริงไหม (null = ยังไม่ได้นับ)
+  found     Boolean?
+  countedBy String?   @map("counted_by")
+  countedAt DateTime? @map("counted_at")
+
+  count StockCount    @relation(fields: [countId], references: [id], onDelete: Cascade)
+  item  InventoryItem @relation(fields: [itemId], references: [id])
+
+  @@id([countId, itemId])
+  @@map("stock_count_items")
 }

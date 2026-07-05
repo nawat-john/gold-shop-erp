@@ -369,7 +369,7 @@
 
 ### Phase 3 — Inventory (สัปดาห์ 8–11)
 
-- [ ] Schema: categories, products, inventory_items, stock_movements (ledger), storage_locations, labels
+- [x] Schema: categories, products, inventory_items, stock_movements (ledger), storage_locations, labels (+ suppliers, branch_transfers, melt_lots, stock_counts — ledger append-only ด้วย trigger, CHECK น้ำหนัก/ต้นทุน/เครื่องหมาย quantity ระดับ DB)
 - [ ] รับสินค้าเข้า (จาก supplier) + ต้นทุน + พิมพ์ป้าย barcode/QR
 - [ ] Serialized item lifecycle: in_stock → sold/pawned/melted/in_transit/missing (state machine + partial unique index)
 - [ ] ค้นหา/สแกนสินค้า (keyboard-first, debounce, ล็อกชิ้นเมื่อถูกดึงเข้าบิล)

@@ -9,7 +9,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current State
 
-**Phases 0–2 are complete** (Foundation; Auth/RBAC/Audit/Settings; Gold Price Engine). `gold-shop-erp-plan.md` is the Thai-language source of truth for scope, architecture, and phasing (Phases 0–8); update its checklists and `docs/adr/` when significant decisions are made — the owner wants progress ticked continuously, not at session end. Next up: Phase 3 (Inventory — plan §7). Known leftovers: role-permission editing UI (roles page is read-only), enforcing 2FA for high-privilege roles at login, price-change alerts into a notification center (module L), real Gold Traders Association feed adapter (mock only).
+**Phases 0–2 are complete** (Foundation; Auth/RBAC/Audit/Settings; Gold Price Engine). **Phase 3 (Inventory) is in progress: schema + DB constraints + schema tests are done — services/UI are not.** The ordered next-step list lives in memory (`project-phase3-next-steps`): state-machine services with ledger rows per transition, 2-step transfers, stock counts with step-up approval, melt lots, stock.* permissions, UI, and the mandatory concurrency test (two clients selling the same piece — one succeeds). Schema decisions already fixed: COUNTED products derive quantity from the ledger (no per-piece rows); `serialNo` is the barcode; `RESERVED` status is the POS lock; `stock_movements` is append-only (trigger) with sign checks at the DB level.
+
+`gold-shop-erp-plan.md` is the Thai-language source of truth for scope, architecture, and phasing (Phases 0–8); update its checklists and `docs/adr/` when significant decisions are made — the owner wants progress ticked continuously, not at session end. Known leftovers: role-permission editing UI (roles page is read-only), enforcing 2FA for high-privilege roles at login, price-change alerts into a notification center (module L), real Gold Traders Association feed adapter (mock only).
 
 Scope: local development only (Docker Compose), no deployment. UI language is Thai; the domain is Thai gold shops (POS buy/sell, pawn/ขายฝาก, gold savings/ออมทอง, inventory, accounting/tax, CRM+KYC, multi-branch).
 
