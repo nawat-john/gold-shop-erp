@@ -2,20 +2,40 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Working Rules (from the project owner)
+
+- **Never commit.** The owner reviews all code and commits himself. Leave changes in the working tree and summarize them.
+- **Every feature ships with tests in the same change** — unit (Vitest) for pure logic, integration (Testcontainers) for anything touching Postgres transactions/locks, E2E (Playwright) for main flows.
+
 ## Current State
 
-This is a **greenfield project** — no code exists yet. The only file is `gold-shop-erp-plan.md`, a comprehensive Thai-language plan for a Gold Shop ERP (ระบบ ERP ร้านทองไทย). That plan is the source of truth for scope, architecture, and phasing. Read it before starting any implementation work; update it (checklists, ADRs) when significant decisions are made.
+**Phase 0 (Foundation) is complete.** `gold-shop-erp-plan.md` is the Thai-language source of truth for scope, architecture, and phasing (Phases 0–8); update its checklists and `docs/adr/` when significant decisions are made. Next up: Phase 1 (Auth, RBAC, Audit, Settings — plan §7).
 
 Scope: local development only (Docker Compose), no deployment. UI language is Thai; the domain is Thai gold shops (POS buy/sell, pawn/ขายฝาก, gold savings/ออมทอง, inventory, accounting/tax, CRM+KYC, multi-branch).
 
-## Planned Tech Stack (from the plan — follow unless an ADR changes it)
+## Commands
 
-- Next.js 15 (App Router) + TypeScript strict, Tailwind + shadcn/ui, TanStack Query/Table, React Hook Form + Zod
-- PostgreSQL 16 + Prisma (versioned migrations), Redis + BullMQ for jobs (price feed fetch, PDF export, backups)
-- Auth.js (NextAuth v5) credentials + TOTP 2FA (otplib), Argon2id password hashing
-- Testing: Vitest (unit), Testcontainers (integration against real Postgres), Playwright (E2E)
-- Dev env: Docker Compose (`web`, `postgres`, `redis`, `mailhog`, `print-service`), mkcert TLS even locally
-- Package manager: pnpm. Target setup: `docker compose up` + `pnpm dev`; CI order: lint → typecheck → unit → integration → e2e
+- `docker compose up -d` — Postgres 16 / Redis 7 / Mailhog (required for dev and migrations)
+- `pnpm dev` (or `dev:https`), `pnpm build`
+- `pnpm lint`, `pnpm typecheck`, `pnpm format`
+- `pnpm test` (unit, fast), `pnpm test:integration` (Testcontainers, needs Docker), `pnpm test:e2e` (Playwright; starts dev server itself)
+- Run a single test file: `pnpm vitest run src/server/domain/money.test.ts`
+- `pnpm db:migrate` (Prisma migrate dev), `pnpm db:generate`, `pnpm db:studio`, `pnpm prisma db seed`
+- Pre-commit (Husky): lint-staged + unit tests + gitleaks (if installed). CI (`.github/workflows/ci.yml`): lint → typecheck → unit → integration → e2e → audit.
+
+## Stack Notes (details in docs/adr/ADR-001)
+
+- Next.js 15.5 App Router, TypeScript strict, target **ES2022** (required for bigint literals), Tailwind 4, Zod 4 (`z.url()`, not `z.string().url()`)
+- **Prisma 7**: config lives in `prisma.config.ts` (not the schema datasource block); client is generated to `src/generated/prisma` (gitignored — run `pnpm db:generate` after clone/schema change); instantiation requires the driver adapter: `new PrismaClient({ adapter: new PrismaPg({ connectionString }) })`. Use the `prisma` singleton from `src/server/db.ts`.
+- pnpm 11 blocks dependency build scripts — approve new ones in `pnpm-workspace.yaml` `allowBuilds`.
+- Layout: `src/config/env.ts` (zod-validated env, server-only), `src/lib/logger.ts` (pino with PII redact paths — extend when adding sensitive fields), `src/server/domain|services|repositories`, integration tests in `tests/integration/`, E2E in `tests/e2e/`.
+- Not yet installed (add when the phase needs them): shadcn/ui, TanStack Query/Table, React Hook Form, BullMQ, Auth.js, otplib, argon2.
+
+## Established Patterns (copy these, don't reinvent)
+
+- Money/weight primitives: `src/server/domain/money.ts` (`Satang` = bigint satang, `mulDivRoundHalfUp` for VAT/ratios, parse via `satangFromBahtString` — rejects excess precision, never silently rounds) and `src/server/domain/gold.ts` (`Milligrams` = bigint mg). See docs/adr/ADR-002.
+- Document numbers: `src/server/services/document-number.service.ts` — allocate inside the same `prisma.$transaction` as the document insert (atomic upsert holds the row lock; rollback returns the number, guaranteeing no gaps). Its Testcontainers test (`tests/integration/document-number.test.ts`) is the template for concurrency tests: real Postgres container + `prisma migrate deploy` + parallel transactions.
+- Every request carries `x-request-id` (set in `src/middleware.ts`) — thread it into logs/audit records.
 
 ## Non-negotiable Architecture Rules
 

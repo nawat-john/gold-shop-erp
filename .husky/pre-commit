@@ -1,0 +1,11 @@
+pnpm exec lint-staged
+
+# unit tests เร็วพอที่จะรันทุก commit (integration/e2e ไปรันใน CI)
+pnpm test
+
+# gitleaks: สแกน secret ในไฟล์ที่ staged (ข้ามพร้อมคำเตือนถ้ายังไม่ได้ติดตั้ง — CI สแกนซ้ำเสมอ)
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --redact
+else
+  echo "[warn] gitleaks ยังไม่ได้ติดตั้ง — ข้ามการสแกน secret (ติดตั้ง: winget install Gitleaks.Gitleaks)"
+fi

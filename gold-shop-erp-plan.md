@@ -9,19 +9,22 @@
 ## 1. ภาพรวมโครงการ (Project Overview)
 
 ### 1.1 เป้าหมาย
+
 สร้างระบบ ERP ที่ครอบคลุมทุกกระบวนการของร้านทองไทย ตั้งแต่หน้าร้าน (POS ซื้อ-ขาย), ขายฝาก/จำนำ, ออมทอง, สต๊อกสินค้า, บัญชี-ภาษี, ลูกค้า (CRM + KYC), ไปจนถึงรายงานผู้บริหาร รองรับหลายสาขา หลายผู้ใช้ พร้อม Audit Trail ครบทุกธุรกรรม
 
 ### 1.2 ผู้ใช้งานหลัก (User Roles)
-| Role | หน้าที่ | สิทธิ์หลัก |
-|---|---|---|
-| เจ้าของร้าน (Owner) | ดูภาพรวม, อนุมัติ, ตั้งค่าระบบ | ทุกอย่าง + ดู Audit Log |
-| ผู้จัดการสาขา (Branch Manager) | บริหารสาขา, อนุมัติรายการพิเศษ, ปิดยอด | จัดการสาขาตัวเอง, override ราคา (มี log) |
-| พนักงานขาย (Cashier/Sales) | ซื้อ-ขายหน้าร้าน, รับขายฝาก | เปิดบิล, รับ-จ่ายเงิน, ห้ามแก้ราคาเกิน threshold |
-| พนักงานสต๊อก (Stock Keeper) | รับเข้า-ตัดจ่าย, นับสต๊อก | จัดการสต๊อก, พิมพ์ป้าย/บาร์โค้ด |
-| ฝ่ายบัญชี (Accountant) | กระทบยอด, ภาษี, งบการเงิน | ดู/ปิดบัญชี, ออกใบกำกับภาษี |
-| ผู้ดูแลระบบ (Admin) | จัดการ user, สิทธิ์, ตั้งค่า | User management, ไม่จำเป็นต้องเห็นข้อมูลการเงิน |
+
+| Role                           | หน้าที่                                | สิทธิ์หลัก                                       |
+| ------------------------------ | -------------------------------------- | ------------------------------------------------ |
+| เจ้าของร้าน (Owner)            | ดูภาพรวม, อนุมัติ, ตั้งค่าระบบ         | ทุกอย่าง + ดู Audit Log                          |
+| ผู้จัดการสาขา (Branch Manager) | บริหารสาขา, อนุมัติรายการพิเศษ, ปิดยอด | จัดการสาขาตัวเอง, override ราคา (มี log)         |
+| พนักงานขาย (Cashier/Sales)     | ซื้อ-ขายหน้าร้าน, รับขายฝาก            | เปิดบิล, รับ-จ่ายเงิน, ห้ามแก้ราคาเกิน threshold |
+| พนักงานสต๊อก (Stock Keeper)    | รับเข้า-ตัดจ่าย, นับสต๊อก              | จัดการสต๊อก, พิมพ์ป้าย/บาร์โค้ด                  |
+| ฝ่ายบัญชี (Accountant)         | กระทบยอด, ภาษี, งบการเงิน              | ดู/ปิดบัญชี, ออกใบกำกับภาษี                      |
+| ผู้ดูแลระบบ (Admin)            | จัดการ user, สิทธิ์, ตั้งค่า           | User management, ไม่จำเป็นต้องเห็นข้อมูลการเงิน  |
 
 ### 1.3 หลักการออกแบบ (Design Principles)
+
 1. **ทุกธุรกรรมเงิน/ทองต้องเป็น Double-Entry + Immutable** — ห้ามลบ/แก้บิลที่ปิดแล้ว ใช้วิธีออกเอกสารกลับรายการ (Void/Reversal) เท่านั้น
 2. **ราคาทอง ณ เวลาทำรายการต้อง Snapshot ติดไปกับบิล** — ไม่อ้างอิงราคาปัจจุบันย้อนหลัง
 3. **น้ำหนักทองเก็บเป็นหน่วยที่แม่นยำที่สุด (กรัม, ทศนิยม 3–4 ตำแหน่ง)** และเงินเก็บเป็นสตางค์ (integer) — ห้ามใช้ floating point กับเงินเด็ดขาด
@@ -35,18 +38,21 @@
 ส่วนนี้สำคัญมาก เพราะตรรกะทางธุรกิจของร้านทองไทยต่างจาก retail ทั่วไป
 
 ### 2.1 หน่วยน้ำหนักและความบริสุทธิ์
+
 - **1 บาททอง (ทองรูปพรรณ) = 15.16 กรัม** / **1 บาททอง (ทองแท่ง) = 15.244 กรัม**
 - 1 บาท = 4 สลึง, 1 สลึง = 3.79 กรัม (รูปพรรณ), หน่วยย่อย: 2 สลึง (ครึ่งบาท), 1 สลึง, ครึ่งสลึง, 1 กรัม
 - มาตรฐานไทย: **ทอง 96.5%** (ทองรูปพรรณ/ทองแท่งทั่วไป), ทอง 99.99% (ทองคำแท่ง LBMA/นำเข้า), ทอง 90%, ทองเค (9K/14K/18K) สำหรับจิวเวลรี่
 - ระบบต้องเก็บ: น้ำหนักกรัม (ตัวเลขจริง), หน่วยแสดงผล (บาท/สลึง/กรัม), % ความบริสุทธิ์ (fineness)
 
 ### 2.2 โครงสร้างราคา
+
 - **ราคาสมาคมค้าทองคำ** ประกาศราคารับซื้อ/ขายออก ทองแท่งและทองรูปพรรณ เปลี่ยนได้หลายรอบต่อวัน → ต้องมีตาราง `gold_price_history` เก็บทุกประกาศ
 - **ราคาขายทองรูปพรรณ = (ราคาทองรูปพรรณขายออก × น้ำหนักบาท) + ค่ากำเหน็จ (labor charge)**
 - **ราคารับซื้อคืน** ต่ำกว่าราคาขาย และมักหักตามสภาพ/ความบริสุทธิ์จริง (ทองร้านตัวเอง vs ทองร้านอื่น รับซื้อคนละเรต)
 - ค่ากำเหน็จกำหนดได้หลายแบบ: ต่อชิ้น, ต่อบาททอง, ตามหมวดสินค้า → ต้อง configurable
 
 ### 2.3 ประเภทธุรกรรมหลัก
+
 1. **ขายทองใหม่** (รูปพรรณ/แท่ง)
 2. **รับซื้อทองเก่า** (ทองร้านตัวเอง = ดูจากใบรับประกัน/ตอกโค้ด, ทองร้านอื่น)
 3. **เปลี่ยนทอง (Trade-in)** — เอาทองเก่ามาแลกทองใหม่ จ่าย/รับส่วนต่าง (บิลเดียวมีทั้งซื้อและขาย)
@@ -56,6 +62,7 @@
 7. **ซ่อม/ชุบ/ขัด** — งานบริการ
 
 ### 2.4 ข้อกำหนดทางกฎหมายที่ระบบต้องรองรับ
+
 - **AMLO (ปปง.)** — ร้านทองเป็น "ผู้ประกอบอาชีพตามมาตรา 16" ต้องทำ KYC/CDD ลูกค้า, รายงานธุรกรรมเงินสดเกินเกณฑ์ (แบบ ปปง. 1-05-9) และธุรกรรมมีเหตุอันควรสงสัย → ระบบต้องเก็บบัตรประชาชนลูกค้า, ตรวจ threshold อัตโนมัติ, export รายงาน
 - **ภาษีมูลค่าเพิ่มร้านทอง** — ทองรูปพรรณเสีย VAT เฉพาะ "ค่ากำเหน็จ + ส่วนต่าง" (ฐานภาษีพิเศษตามประกาศกรมสรรพากร) ไม่ใช่ราคาเต็ม → เครื่องคิด VAT ต้องแยกฐานถูกต้อง และรองรับใบกำกับภาษีอย่างย่อ/เต็มรูป
 - **ขายฝากตามประมวลกฎหมายแพ่งฯ + พ.ร.บ. ห้ามเรียกดอกเบี้ยเกินอัตรา** — ดอกเบี้ย/สินไถ่ต้องคำนวณตามกติกาและพิมพ์สัญญาถูกต้อง
@@ -66,6 +73,7 @@
 ## 3. Feature ทั้งหมดแยกตามโมดูล (Full Feature List)
 
 ### โมดูล A — ราคาทอง (Gold Price Engine)
+
 - [ ] ดึงราคาสมาคมค้าทองคำอัตโนมัติ (scheduled fetch) + fallback กรอกมือ
 - [ ] เก็บประวัติราคาทุกประกาศ (timestamp, รอบประกาศ, buy/sell, แท่ง/รูปพรรณ)
 - [ ] ประกาศราคาหน้าร้านเอง (ราคาร้านอาจต่างจากสมาคม) พร้อมผู้อนุมัติ
@@ -74,6 +82,7 @@
 - [ ] กราฟราคาย้อนหลัง + แจ้งเตือนเมื่อราคาเปลี่ยนเกิน threshold
 
 ### โมดูล B — POS ซื้อ-ขายหน้าร้าน
+
 - [ ] เปิดบิลขายทองใหม่: สแกนบาร์โค้ด/QR ที่ป้ายทอง → ดึงน้ำหนัก, ค่ากำเหน็จ, คำนวณราคาอัตโนมัติ
 - [ ] รับซื้อทองเก่า: กรอกน้ำหนักชั่งจริง, % ทอง, เลือกเรต (ทองร้าน/ทองนอก), ถ่ายรูปสินค้า
 - [ ] เปลี่ยนทอง (trade-in) ในบิลเดียว คำนวณส่วนต่างอัตโนมัติ
@@ -86,6 +95,7 @@
 - [ ] โหมดหน้าจอสัมผัส ใช้งานเร็ว keyboard-first สำหรับพนักงาน
 
 ### โมดูล C — ขายฝาก / จำนำ (Pawn Module)
+
 - [ ] เปิดสัญญาขายฝาก: ถ่ายรูปทอง + ลูกค้า, ชั่งน้ำหนัก, ประเมินราคา (แนะนำวงเงินจาก % ของราคาตลาด), กำหนดดอกเบี้ย/ระยะเวลา
 - [ ] พิมพ์สัญญาขายฝากตามแบบกฎหมาย + สำเนา
 - [ ] ต่อดอก (interest renewal): คำนวณดอกเบี้ยค้าง, ออกใบเสร็จ, ขยายกำหนด
@@ -97,6 +107,7 @@
 - [ ] Ledger ดอกเบี้ยรับ แยกตามสัญญา/งวด สำหรับบัญชี
 
 ### โมดูล D — ออมทอง (Gold Savings)
+
 - [ ] เปิดสัญญาออม: แบบออมเงิน (สะสมยอดเงิน) หรือออมน้ำหนัก (ตัดน้ำหนักตามราคาวันฝาก)
 - [ ] รับฝากรายงวด, บันทึกราคาทอง ณ วันฝาก, สมุดออม/statement
 - [ ] ครบกำหนด: รับเป็นทองจริง (เลือกชิ้นจากสต๊อก) หรือขายคืนเป็นเงิน
@@ -104,6 +115,7 @@
 - [ ] รายงาน liability รวม (ร้านติดหนี้ทอง/เงินลูกค้าเท่าไร) — สำคัญต่อการบริหารความเสี่ยง
 
 ### โมดูล E — สต๊อกและสินค้า (Inventory)
+
 - [ ] ทะเบียนสินค้า: SKU, ประเภท (สร้อยคอ/แหวน/กำไล/ทองแท่ง...), ลาย, น้ำหนัก, % ทอง, ค่ากำเหน็จ, รูปถ่าย, ต้นทุน
 - [ ] แยก "สินค้ารายชิ้น" (serialized — ทองรูปพรรณทุกชิ้นมีป้ายเลขไม่ซ้ำ) กับ "สินค้านับจำนวน" (ทองแท่งมาตรฐาน)
 - [ ] พิมพ์ป้ายทอง barcode/QR (ขนาดป้ายจิวเวลรี่)
@@ -116,12 +128,14 @@
 - [ ] มูลค่าสต๊อกตามราคาตลาดปัจจุบัน (mark-to-market) เทียบต้นทุน
 
 ### โมดูล F — งานช่าง / สั่งผลิต / ซ่อม
+
 - [ ] ใบสั่งทำ: สเปก, น้ำหนักโดยประมาณ, มัดจำ, วันนัดรับ, มอบหมายช่าง/โรงงาน
 - [ ] เบิกทองให้ช่าง — คุมน้ำหนักเบิก vs น้ำหนักงานส่งคืน + เศษทอง (loss tolerance)
 - [ ] ใบรับซ่อม: รับของ, ถ่ายรูปสภาพ, ค่าบริการ, สถานะงาน, แจ้งรับของ
 - [ ] คิวงานช่าง + สถานะ (รับงาน → กำลังทำ → เสร็จ → ส่งมอบ)
 
 ### โมดูล G — ลูกค้าและ KYC (CRM + Compliance)
+
 - [ ] ทะเบียนลูกค้า: ชื่อ, เลขบัตร ปชช. (เข้ารหัส), ที่อยู่, เบอร์, รูปถ่าย/รูปบัตร
 - [ ] อ่านบัตรประชาชนผ่านเครื่องอ่าน smart card (integration point — mock ไว้ใน dev)
 - [ ] ประวัติธุรกรรมทั้งหมดของลูกค้า (ซื้อ/ขาย/ขายฝาก/ออม)
@@ -131,6 +145,7 @@
 - [ ] PDPA: consent record, data masking ตาม role, สิทธิ์ขอลบ/แก้ไข (soft-delete + anonymize)
 
 ### โมดูล H — บัญชีและการเงิน (Accounting & Finance)
+
 - [ ] ผังบัญชี (Chart of Accounts) มาตรฐานร้านทอง + แก้ไขได้
 - [ ] ลงบัญชีอัตโนมัติจากทุกธุรกรรม (double-entry journal ที่ระบบ generate)
 - [ ] สมุดเงินสด/เงินฝากธนาคาร แยกบัญชี, กระทบยอด (reconciliation)
@@ -141,6 +156,7 @@
 - [ ] ปิดงวดบัญชี (period locking) — งวดที่ปิดแล้วห้ามแก้ธุรกรรมย้อนหลัง
 
 ### โมดูล I — รายงานและ Dashboard
+
 - [ ] Dashboard ผู้บริหาร: ยอดขาย/ซื้อวันนี้, กำไรขั้นต้น, เงินสดคงเหลือ, มูลค่าสต๊อก, ยอดขายฝากคงค้าง, exposure สุทธิ (ทอง long/short)
 - [ ] รายงานประจำวัน: สรุปปิดกะ, เงินสด/โอน/บัตร, น้ำหนักทองเข้า-ออก
 - [ ] รายงานสต๊อก: คงเหลือตามหมวด/สาขา, สินค้าค้างนาน (aging), เคลื่อนไหว
@@ -149,16 +165,19 @@
 - [ ] Export ทุกรายงานเป็น CSV/Excel/PDF
 
 ### โมดูล J — ระบบหลายสาขาและองค์กร
+
 - [ ] Multi-branch: ข้อมูลแยกสาขา + รวมศูนย์, ราคากลางประกาศจากสำนักงานใหญ่
 - [ ] โอนเงิน/โอนทองระหว่างสาขา (in-transit state)
 - [ ] สิทธิ์ผู้ใช้ผูกกับสาขา
 
 ### โมดูล K — พนักงาน
+
 - [ ] ทะเบียนพนักงาน, ผูก user account, กะการทำงาน
 - [ ] ค่าคอมมิชชั่นการขาย (rule configurable) + รายงาน
 - [ ] PIN/รหัสอนุมัติสำหรับ action พิเศษ (แยกจากรหัส login)
 
 ### โมดูล L — ระบบหลังบ้านและความปลอดภัย (Admin, Security, Platform)
+
 - [ ] Authentication: username/password (Argon2id), บังคับรหัสผ่านแข็งแรง, 2FA (TOTP) สำหรับ role สูง
 - [ ] RBAC ละเอียดระดับ permission (ไม่ใช่แค่ role) + branch scoping
 - [ ] Session management: idle timeout, บังคับ re-auth ก่อน action สำคัญ (step-up auth)
@@ -174,20 +193,20 @@
 
 ### 4.1 Stack ที่แนะนำ (ทั้งหมดรันบน Local ผ่าน Docker Compose)
 
-| Layer | เทคโนโลยี | เหตุผล |
-|---|---|---|
-| Frontend + BFF | **Next.js 15 (App Router) + TypeScript (strict)** | ตามโจทย์, ทำ SSR/Server Actions/Route Handlers ได้ในตัว |
-| UI | Tailwind CSS + shadcn/ui + TanStack Table + React Hook Form + Zod | ฟอร์มเยอะ ตารางเยอะ ต้องการ validation แน่นทั้ง client/server |
-| State/Data fetching | TanStack Query + Server Components | cache + optimistic update สำหรับ POS |
-| Database | **PostgreSQL 16** | ACID จริงจัง, `NUMERIC` สำหรับเงิน/น้ำหนัก, row-level lock สำหรับสต๊อก |
-| ORM | **Prisma** (หรือ Drizzle) + migration แบบ versioned | schema เป็น source of truth, review migration ได้ |
-| Cache/Queue | **Redis** (BullMQ) | ราคาทอง cache, job ดึงราคา, งาน export หนัก ๆ |
-| Auth | **Auth.js (NextAuth v5)** credentials + TOTP (otplib) | ควบคุม session server-side ได้ |
-| Validation | **Zod schema ใช้ร่วมกัน client/server** | single source of truth ของ business rule input |
-| PDF/พิมพ์ | react-pdf หรือ Playwright print-to-PDF สำหรับใบกำกับ/สัญญา; ESC/POS ผ่าน local print service (Node) สำหรับใบเสร็จ | รองรับทั้งเอกสาร A4 และ slip 80mm |
-| Testing | Vitest (unit), Playwright (E2E), Testcontainers (integration กับ Postgres จริง) | business logic เงิน-ทองต้อง test หนัก |
-| Observability (local) | pino (structured log) + OpenTelemetry local + Grafana/Loki (optional) | debug ธุรกรรมย้อนหลังได้ |
-| Dev environment | Docker Compose: `web`, `postgres`, `redis`, `mailhog`(mock email), `print-service` | ทุกคนในทีม env เดียวกัน |
+| Layer                 | เทคโนโลยี                                                                                                         | เหตุผล                                                                 |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Frontend + BFF        | **Next.js 15 (App Router) + TypeScript (strict)**                                                                 | ตามโจทย์, ทำ SSR/Server Actions/Route Handlers ได้ในตัว                |
+| UI                    | Tailwind CSS + shadcn/ui + TanStack Table + React Hook Form + Zod                                                 | ฟอร์มเยอะ ตารางเยอะ ต้องการ validation แน่นทั้ง client/server          |
+| State/Data fetching   | TanStack Query + Server Components                                                                                | cache + optimistic update สำหรับ POS                                   |
+| Database              | **PostgreSQL 16**                                                                                                 | ACID จริงจัง, `NUMERIC` สำหรับเงิน/น้ำหนัก, row-level lock สำหรับสต๊อก |
+| ORM                   | **Prisma** (หรือ Drizzle) + migration แบบ versioned                                                               | schema เป็น source of truth, review migration ได้                      |
+| Cache/Queue           | **Redis** (BullMQ)                                                                                                | ราคาทอง cache, job ดึงราคา, งาน export หนัก ๆ                          |
+| Auth                  | **Auth.js (NextAuth v5)** credentials + TOTP (otplib)                                                             | ควบคุม session server-side ได้                                         |
+| Validation            | **Zod schema ใช้ร่วมกัน client/server**                                                                           | single source of truth ของ business rule input                         |
+| PDF/พิมพ์             | react-pdf หรือ Playwright print-to-PDF สำหรับใบกำกับ/สัญญา; ESC/POS ผ่าน local print service (Node) สำหรับใบเสร็จ | รองรับทั้งเอกสาร A4 และ slip 80mm                                      |
+| Testing               | Vitest (unit), Playwright (E2E), Testcontainers (integration กับ Postgres จริง)                                   | business logic เงิน-ทองต้อง test หนัก                                  |
+| Observability (local) | pino (structured log) + OpenTelemetry local + Grafana/Loki (optional)                                             | debug ธุรกรรมย้อนหลังได้                                               |
+| Dev environment       | Docker Compose: `web`, `postgres`, `redis`, `mailhog`(mock email), `print-service`                                | ทุกคนในทีม env เดียวกัน                                                |
 
 ### 4.2 Architecture Diagram (ระดับ Concept)
 
@@ -207,6 +226,7 @@
 ```
 
 **กติกาสถาปัตยกรรมที่ต้องถือเคร่งครัด:**
+
 1. Business logic อยู่ใน service layer ที่เป็น pure function ให้มากที่สุด (คำนวณราคา, ดอกเบี้ย, VAT) → unit test ได้ 100%
 2. ทุก use case ที่แตะเงิน/ทอง ห่อใน **DB transaction เดียว** + ใช้ `SELECT ... FOR UPDATE` กับแถวสต๊อก/เลขที่เอกสาร
 3. ทุก API endpoint: authenticate → authorize (permission + branch) → validate (zod) → execute → audit log — ไม่มีข้อยกเว้น
@@ -228,6 +248,7 @@
 **ระบบ:** `audit_logs` (append-only), `document_sequences`, `notifications`, `jobs_log`, `amlo_reports`
 
 **ชนิดข้อมูลบังคับ:**
+
 - เงิน: `BIGINT` หน่วยสตางค์ หรือ `NUMERIC(14,2)` — เลือกอย่างเดียวทั้งระบบ (แนะนำ BIGINT สตางค์)
 - น้ำหนัก: `NUMERIC(10,3)` หน่วยกรัม (+ field หน่วยแสดงผล)
 - ทุกตารางธุรกรรม: `created_by`, `created_at`, `branch_id`, `price_snapshot` (JSONB ราคาทอง ณ ขณะนั้น)
@@ -238,6 +259,7 @@
 ## 5. มาตรการ Security (รายละเอียด)
 
 ### 5.1 Authentication & Session
+
 - [ ] Argon2id hash รหัสผ่าน (memory ≥ 64MB, iterations ตาม OWASP)
 - [ ] นโยบายรหัสผ่าน: ≥ 12 ตัว, ตรวจกับ common-password list, บังคับเปลี่ยนเมื่อถูก reset
 - [ ] Rate limiting + lockout ชั่วคราวเมื่อ login ผิดซ้ำ (per user + per IP)
@@ -246,12 +268,14 @@
 - [ ] Step-up authorization: void บิล, แก้ราคาเกิน limit, อนุมัติทองหลุด, ปรับสต๊อก → ต้องใส่ PIN ผู้อนุมัติ (คนละคนกับผู้ทำรายการได้ = maker-checker)
 
 ### 5.2 Authorization
+
 - [ ] Permission-based (เช่น `sale.create`, `sale.void`, `price.override`, `stock.adjust`, `report.finance.view`) map เข้า role
 - [ ] Branch scoping ทุก query — enforce ที่ repository layer ไม่ใช่แค่ UI
 - [ ] Deny-by-default: endpoint ที่ไม่ประกาศ permission = ปฏิเสธ
 - [ ] ทดสอบ authorization matrix อัตโนมัติ (ทุก role × ทุก endpoint สำคัญ)
 
 ### 5.3 Data Protection
+
 - [ ] เข้ารหัส field อ่อนไหว (เลขบัตร ปชช., เลขบัญชี) ด้วย AES-256-GCM, key แยกจาก DB (env/KMS-ready), เก็บ hash (HMAC) ไว้ค้นหา
 - [ ] Masking ตาม role (พนักงานขายเห็นเลขบัตรบางส่วน x-xxxx-xxxx1-23-x)
 - [ ] รูปบัตร/รูปลูกค้า เก็บนอก web root, เสิร์ฟผ่าน authorized route เท่านั้น + signed URL อายุสั้น
@@ -259,6 +283,7 @@
 - [ ] Log ห้ามมี PII/secret (pino redact paths)
 
 ### 5.4 Application Security
+
 - [ ] Zod validate ทุก input ฝั่ง server (ค่าเงิน/น้ำหนักต้องเป็นบวก, ทศนิยมตามสเปก, enum เข้ม)
 - [ ] ป้องกัน SQL injection ด้วย ORM/parameterized เท่านั้น — ห้าม raw string interpolation
 - [ ] CSRF protection (Server Actions ของ Next มี origin check — เพิ่ม explicit check สำหรับ route handlers)
@@ -268,6 +293,7 @@
 - [ ] Secrets ผ่าน `.env` + zod-validated config, มี `.env.example`, ห้าม commit secret (gitleaks pre-commit)
 
 ### 5.5 Audit & Anti-fraud (สำคัญมากสำหรับร้านทอง)
+
 - [ ] Audit log append-only (DB user ของแอปไม่มีสิทธิ์ UPDATE/DELETE ตารางนี้ — ใช้ trigger/permission ระดับ Postgres)
 - [ ] เก็บ before/after ของทุก mutation สำคัญ + request id เชื่อมถึง log
 - [ ] รายงานพฤติกรรมเสี่ยง: void ถี่, override ราคาถี่, ขายต่ำกว่าทุน, ปรับสต๊อกบ่อย → dashboard สำหรับ owner
@@ -278,6 +304,7 @@
 ## 6. มาตรการ Reliability (รายละเอียด)
 
 ### 6.1 ความถูกต้องของธุรกรรม
+
 - [ ] ทุก use case เงิน/ทอง = single DB transaction, isolation ระดับเหมาะสม (default READ COMMITTED + row lock จุดชนกัน)
 - [ ] Stock movement เป็น ledger append-only แล้ว derive ยอดคงเหลือ — ยอดคงเหลือตรวจสอบย้อนกลับได้เสมอ
 - [ ] Constraint ระดับ DB: CHECK (น้ำหนัก > 0), UNIQUE (เลขที่เอกสาร), FK ครบ, partial index กันขายชิ้นเดิมซ้ำ (inventory_item ขายได้ครั้งเดียว)
@@ -285,12 +312,14 @@
 - [ ] Idempotent job + retry with backoff สำหรับงาน background ทุกตัว
 
 ### 6.2 ความพร้อมใช้งาน (ในบริบท local)
+
 - [ ] ราคาทอง feed ล่ม → ใช้ราคาล่าสุด + banner เตือน + ให้ผู้จัดการประกาศราคามือ
 - [ ] Printer service ล่ม → บิลยัง commit ได้, เข้าคิวพิมพ์ใหม่/พิมพ์ซ้ำจากประวัติ
 - [ ] Graceful degradation: report หนัก ๆ ทำผ่าน queue ไม่บล็อกหน้า POS
 - [ ] Health endpoint + หน้า status ภายใน
 
 ### 6.3 ข้อมูลไม่หาย
+
 - [ ] pg_dump อัตโนมัติทุกคืน + ก่อน migration ทุกครั้ง, เก็บ N ชุด, ตรวจ checksum
 - [ ] ซ้อม restore ลง DB ว่างเป็นส่วนหนึ่งของ Definition of Done แต่ละ phase
 - [ ] Migration ทุกตัวมี down path หรือแผน rollback เขียนไว้
@@ -304,17 +333,19 @@
 > ทุก Phase มี **Definition of Done ร่วม:** unit test ผ่าน ≥ 80% coverage ใน service layer, E2E happy path ผ่าน, ไม่มี critical จาก `pnpm audit`, migration ทดสอบ up/down แล้ว, อัปเดตเอกสาร
 
 ### Phase 0 — Foundation & Project Setup (สัปดาห์ 1–2)
-- [ ] ตั้ง repo, branch strategy (trunk-based + PR review), commit convention
-- [ ] สร้าง Next.js 15 + TypeScript strict + ESLint + Prettier + Husky (lint-staged, gitleaks)
-- [ ] Docker Compose: postgres, redis, mailhog, mkcert TLS สำหรับ dev
-- [ ] Prisma init + migration pipeline + seed script framework
-- [ ] โครง Service/Repository layer + ตัวอย่าง 1 use case จบ loop (พร้อม test)
-- [ ] ตั้ง Vitest + Testcontainers + Playwright โครงพร้อมรัน
-- [ ] Config module (zod-validated env), pino logger + request id middleware
-- [ ] เอกสาร: ADR-001 stack, ADR-002 กติกาเก็บเงิน/น้ำหนัก, README วิธี setup ใน 1 คำสั่ง (`docker compose up` + `pnpm dev`)
-- [ ] CI local/GitHub Actions: lint → typecheck → unit → integration → e2e (บน PR)
+
+- [x] ตั้ง repo (git init แล้ว — branch strategy trunk-based + commit convention ตกลงกันตอนเริ่มมีทีม)
+- [x] สร้าง Next.js 15 + TypeScript strict + ESLint + Prettier + Husky (lint-staged, gitleaks ใน hook/CI — binary local ติดตั้งเพิ่มได้: `winget install Gitleaks.Gitleaks`)
+- [x] Docker Compose: postgres, redis, mailhog (TLS dev ใช้ `pnpm dev:https` แทน mkcert ไปก่อน)
+- [x] Prisma init (v7) + migration pipeline + seed script framework
+- [x] โครง Service/Repository layer + ตัวอย่าง 1 use case จบ loop (document sequence no-gap + concurrency test)
+- [x] ตั้ง Vitest + Testcontainers + Playwright โครงพร้อมรัน
+- [x] Config module (zod-validated env), pino logger + request id middleware
+- [x] เอกสาร: ADR-001 stack, ADR-002 กติกาเก็บเงิน/น้ำหนัก, README วิธี setup ใน 1 คำสั่ง (`docker compose up` + `pnpm dev`)
+- [x] CI GitHub Actions: lint → typecheck → unit → integration → e2e (บน PR) + gitleaks + pnpm audit
 
 ### Phase 1 — Auth, RBAC, Audit, Settings (สัปดาห์ 3–5)
+
 - [ ] Schema: users, roles, permissions, branches, user_branch_roles, audit_logs, settings, document_sequences
 - [ ] Login (Argon2id) + lockout + rate limit
 - [ ] TOTP 2FA (enroll, verify, recovery codes)
@@ -327,6 +358,7 @@
 - [ ] **Test สำคัญ:** authorization matrix test, concurrency test เลขที่เอกสาร (ยิงพร้อมกัน 100 requests ห้ามซ้ำ/ข้าม)
 
 ### Phase 2 — Gold Price Engine (สัปดาห์ 6–7)
+
 - [ ] Schema: gold_price_feeds, shop_price_announcements (+ snapshot format มาตรฐาน)
 - [ ] Job ดึงราคาสมาคม (BullMQ, retry/backoff) + mock feed สำหรับ dev/test
 - [ ] หน้าอนุมัติ/ประกาศราคาร้าน + ประวัติ
@@ -336,6 +368,7 @@
 - [ ] **Test:** feed ล่ม → ระบบยังขายได้ด้วยราคาประกาศล่าสุด + เตือน
 
 ### Phase 3 — Inventory (สัปดาห์ 8–11)
+
 - [ ] Schema: categories, products, inventory_items, stock_movements (ledger), storage_locations, labels
 - [ ] รับสินค้าเข้า (จาก supplier) + ต้นทุน + พิมพ์ป้าย barcode/QR
 - [ ] Serialized item lifecycle: in_stock → sold/pawned/melted/in_transit/missing (state machine + partial unique index)
@@ -347,6 +380,7 @@
 - [ ] **Test:** concurrency ขายชิ้นเดียวกันพร้อมกัน 2 เครื่อง → สำเร็จเครื่องเดียว; ledger replay ต้องได้ยอดตรงกับสถานะรายชิ้นเสมอ
 
 ### Phase 4 — POS ซื้อ-ขาย + ชำระเงิน + ภาษี (สัปดาห์ 12–16) ★ หัวใจระบบ
+
 - [ ] Schema: sales_orders/items, purchase_orders/items, trade_ins, payments, tax_invoices, shifts, cash_drawers
 - [ ] Pricing service: ขายรูปพรรณ/แท่ง, รับซื้อ (ทองร้าน/ทองนอก), ค่ากำเหน็จ rule engine — pure functions + test ครอบทุกสูตร
 - [ ] VAT ร้านทอง (ฐานส่วนต่าง/ค่ากำเหน็จ) + ใบกำกับอย่างย่อ/เต็มรูป + running number
@@ -360,6 +394,7 @@
 - [ ] **Test:** golden test สูตรราคา/ภาษีเทียบกับเคสจริงที่คำนวณมือ, E2E ขาย-รับซื้อ-เปลี่ยน-void ครบ loop, ปิดกะยอดต้อง reconcile ลงตัว
 
 ### Phase 5 — ขายฝาก (Pawn) (สัปดาห์ 17–20) ★ ตัวสร้างรายได้หลักของหลายร้าน
+
 - [ ] Schema: pawn_contracts, pawn_events, pawn_interest_payments, collateral location tracking
 - [ ] Interest engine: ดอกเบี้ยรายเดือน/เศษวัน, เพดานตามกฎหมาย, สูตร configurable — pure function + ตารางเทสต์เคสละเอียด
 - [ ] เปิดสัญญา: ประเมินวงเงิน (% ของ market), ถ่ายรูปทรัพย์+ลูกค้า, พิมพ์สัญญา 2 ฉบับ
@@ -370,6 +405,7 @@
 - [ ] **Test:** คำนวณดอกเบี้ยทุก edge case (ต่อดอกกลางงวด, ไถ่ก่อนกำหนด, ข้ามปี), สถานะสัญญาเป็น state machine ที่ transition ผิดไม่ได้
 
 ### Phase 6 — ออมทอง + งานช่าง + CRM/AMLO (สัปดาห์ 21–24)
+
 - [ ] ออมทอง: เปิดบัญชี (ออมเงิน/ออมน้ำหนัก), ฝากรายงวด, statement, ปิดรับทอง/รับเงิน, liability report
 - [ ] Work orders: สั่งทำ (มัดจำ, เบิกทองช่าง, tolerance เศษทอง), ซ่อม (รับของ-คืนของ, ค่าบริการ), คิวงาน
 - [ ] CRM: โปรไฟล์ลูกค้า, ประวัติทุกธุรกรรม, แต้ม/ระดับ (configurable), mock smart card reader
@@ -378,6 +414,7 @@
 - [ ] **Test:** ออมทองปิดบัญชีทุกกรณี (ครบ/ยกเลิก/ผิดนัด), AMLO trigger ตาม threshold ถูกต้อง
 
 ### Phase 7 — บัญชี การเงิน รายงาน Dashboard (สัปดาห์ 25–28)
+
 - [ ] Chart of accounts + posting rules: ทุกธุรกรรมจาก Phase 4–6 ลง journal อัตโนมัติ (backfill จากข้อมูลที่มี)
 - [ ] สมุดเงินสด/ธนาคาร + reconciliation
 - [ ] รายงาน VAT (ภ.พ.30 summary), ภาษีซื้อ-ขาย
@@ -388,6 +425,7 @@
 - [ ] **Test:** invariant Σdebit=Σcredit ทุกวัน, ธุรกรรมทุกชนิดมี posting rule ครบ (test enumerate), period lock กันได้จริง
 
 ### Phase 8 — Hardening, Multi-branch สมบูรณ์, UAT (สัปดาห์ 29–32)
+
 - [ ] โอนเงิน/ทองข้ามสาขา end-to-end + รายงานรวมศูนย์
 - [ ] Fraud dashboard (void/override/adjust ผิดปกติ)
 - [ ] Backup อัตโนมัติ + ซ้อม restore + เอกสาร runbook
@@ -402,6 +440,7 @@
 ## 8. Checklist คุณภาพขวางทุก Phase (Cross-cutting)
 
 ### Security Gate (ตรวจทุก PR ที่แตะธุรกรรม)
+
 - [ ] มี permission check และ branch scope
 - [ ] Input ผ่าน zod ฝั่ง server
 - [ ] เขียน audit log พร้อม before/after
@@ -409,12 +448,14 @@
 - [ ] ไม่มี secret/PII หลุดลง log
 
 ### Reliability Gate
+
 - [ ] ธุรกรรมอยู่ใน DB transaction เดียว + จุดชนกันมี lock
 - [ ] จุด submit สำคัญมี idempotency
 - [ ] มี test concurrency ถ้าแตะสต๊อก/เลขเอกสาร
 - [ ] Failure path เขียนไว้ (printer ล่ม, feed ล่ม, job fail → retry)
 
 ### Testing Pyramid เป้าหมาย
+
 - Unit (service/pure logic): ครอบสูตรเงิน/ดอกเบี้ย/ภาษี 100%
 - Integration (Testcontainers): repository + transaction + constraint
 - E2E (Playwright): flow หลักต่อโมดูลอย่างน้อยโมดูลละ 3 scenario
@@ -424,18 +465,19 @@
 
 ## 9. ความเสี่ยงหลักและแผนรับมือ
 
-| ความเสี่ยง | ผลกระทบ | แผนรับมือ |
-|---|---|---|
-| สูตรภาษี/ดอกเบี้ยผิดจากกฎหมายจริง | สูงมาก | ให้บัญชี/ที่ปรึกษาร้านทองรีวิว golden test cases ก่อนเริ่ม Phase 4–5 |
-| ราคาทองผันผวนระหว่างทำบิล | สูง | Snapshot + บิลมีอายุ (เช่น lock ราคา 5 นาที) + re-confirm ถ้าเกิน |
-| พนักงานทุจริต | สูง | Maker-checker, audit log, fraud dashboard, segregation of duties |
-| Scope ใหญ่เกิน ทำไม่จบ | กลาง | ตัดจบเป็น phase, Phase 4 (POS) ใช้งานจริงได้ก่อนโดยไม่รอโมดูลอื่น |
-| ข้อมูลสต๊อกเพี้ยนจาก bug concurrency | สูง | Ledger append-only + invariant job รายวัน + concurrency tests |
-| Hardware integration (printer/เครื่องอ่านบัตร) ติดหล่ม | กลาง | Mock ทุก integration ใน dev, ออกแบบเป็น adapter เปลี่ยนได้ |
+| ความเสี่ยง                                             | ผลกระทบ | แผนรับมือ                                                            |
+| ------------------------------------------------------ | ------- | -------------------------------------------------------------------- |
+| สูตรภาษี/ดอกเบี้ยผิดจากกฎหมายจริง                      | สูงมาก  | ให้บัญชี/ที่ปรึกษาร้านทองรีวิว golden test cases ก่อนเริ่ม Phase 4–5 |
+| ราคาทองผันผวนระหว่างทำบิล                              | สูง     | Snapshot + บิลมีอายุ (เช่น lock ราคา 5 นาที) + re-confirm ถ้าเกิน    |
+| พนักงานทุจริต                                          | สูง     | Maker-checker, audit log, fraud dashboard, segregation of duties     |
+| Scope ใหญ่เกิน ทำไม่จบ                                 | กลาง    | ตัดจบเป็น phase, Phase 4 (POS) ใช้งานจริงได้ก่อนโดยไม่รอโมดูลอื่น    |
+| ข้อมูลสต๊อกเพี้ยนจาก bug concurrency                   | สูง     | Ledger append-only + invariant job รายวัน + concurrency tests        |
+| Hardware integration (printer/เครื่องอ่านบัตร) ติดหล่ม | กลาง    | Mock ทุก integration ใน dev, ออกแบบเป็น adapter เปลี่ยนได้           |
 
 ---
 
 ## 10. สิ่งที่ควรเตรียมก่อนเริ่ม (Pre-project Checklist)
+
 - [ ] สัมภาษณ์เจ้าของร้าน/พนักงานจริง เก็บสูตรราคา, เรตรับซื้อ, กติกาขายฝากของร้าน (แต่ละร้านไม่เหมือนกัน)
 - [ ] เก็บตัวอย่างเอกสารจริง: บิล, ใบกำกับภาษี, สัญญาขายฝาก, ใบรับประกัน, สมุดออมทอง → ใช้ออกแบบ template
 - [ ] ยืนยันเกณฑ์ AMLO และรูปแบบรายงานล่าสุดกับที่ปรึกษา/เว็บ ปปง.
@@ -445,4 +487,4 @@
 
 ---
 
-*เอกสารนี้เป็น living document — อัปเดต checklist และ ADR ทุกครั้งที่ตัดสินใจสำคัญ*
+_เอกสารนี้เป็น living document — อัปเดต checklist และ ADR ทุกครั้งที่ตัดสินใจสำคัญ_

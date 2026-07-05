@@ -1,7 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Prisma schema — source of truth ของโครงสร้าง DB
+// กติกา (ADR-002): เงิน = BIGINT สตางค์, น้ำหนัก = NUMERIC(10,3) กรัม
+// ตารางธุรกรรมห้าม soft delete — ใช้ status + reversal เท่านั้น
 
 generator client {
   provider = "prisma-client"
@@ -10,4 +9,16 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+/// เลขที่เอกสารแบบ no-gap (บิล/ใบกำกับภาษี/สัญญา)
+/// จองเลขภายใน transaction เดียวกับการสร้างเอกสารเสมอ — ถ้า tx rollback เลขถูกคืนอัตโนมัติ
+/// ห้าม query ตารางนี้ตรง ๆ — ใช้ผ่าน documentNumberService เท่านั้น
+model DocumentSequence {
+  /// เช่น "TAXINV-BKK01-2569" (ประเภทเอกสาร-สาขา-ปี)
+  key        String   @id
+  nextNumber BigInt   @default(1) @map("next_number")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("document_sequences")
 }

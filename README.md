@@ -30,16 +30,16 @@ pnpm dev
 
 ## คำสั่งที่ใช้บ่อย
 
-| คำสั่ง | ทำอะไร |
-|---|---|
-| `pnpm dev` | รัน dev server (Turbopack) |
-| `pnpm build` | production build |
-| `pnpm lint` / `pnpm typecheck` | ESLint / TypeScript ตรวจ type |
-| `pnpm test` / `pnpm test:watch` | รัน unit tests (Vitest) |
-| `pnpm test:coverage` | รัน test พร้อม coverage report |
-| `pnpm format` | จัด format ด้วย Prettier |
-| `pnpm db:migrate` | สร้าง/รัน Prisma migration |
-| `pnpm db:studio` | เปิด Prisma Studio ดูข้อมูล |
+| คำสั่ง                          | ทำอะไร                         |
+| ------------------------------- | ------------------------------ |
+| `pnpm dev`                      | รัน dev server (Turbopack)     |
+| `pnpm build`                    | production build               |
+| `pnpm lint` / `pnpm typecheck`  | ESLint / TypeScript ตรวจ type  |
+| `pnpm test` / `pnpm test:watch` | รัน unit tests (Vitest)        |
+| `pnpm test:coverage`            | รัน test พร้อม coverage report |
+| `pnpm format`                   | จัด format ด้วย Prettier       |
+| `pnpm db:migrate`               | สร้าง/รัน Prisma migration     |
+| `pnpm db:studio`                | เปิด Prisma Studio ดูข้อมูล    |
 
 ## โครงสร้างโปรเจกต์
 
