@@ -15,6 +15,16 @@ import {
   createTradeIn,
   voidOrder,
 } from "@/server/services/pos.service";
+import {
+  postSalesOrder,
+  postPurchaseOrder,
+  postTradeIn,
+  postVoidSalesOrder,
+  postVoidPurchaseOrder,
+  postVoidTradeIn,
+  postSafely,
+} from "@/server/services/accounting.service";
+import { awardCommissionForSalesOrder } from "@/server/services/commission.service";
 import { satangFromBahtString } from "@/server/domain/money";
 import { PaymentMethod } from "@/generated/prisma/client";
 
@@ -161,6 +171,20 @@ export async function createSalesOrderAction(
       actorId: session.user.id,
     });
 
+    await postSafely(() => postSalesOrder(prisma, order.id, session.user.id), {
+      module: "sales_order",
+      orderId: order.id,
+    });
+    await postSafely(
+      () =>
+        awardCommissionForSalesOrder(prisma, {
+          salesOrderId: order.id,
+          staffId: session.user.id,
+          actorId: session.user.id,
+        }),
+      { module: "commission", orderId: order.id },
+    );
+
     revalidatePath("/admin/pos");
     return { success: "เปิดบิลขายสำเร็จ", orderId: order.id };
   } catch (err) {
@@ -207,6 +231,11 @@ export async function createPurchaseOrderAction(
       idempotencyKey,
       actorId: session.user.id,
     });
+
+    await postSafely(
+      () => postPurchaseOrder(prisma, order.id, session.user.id),
+      { module: "purchase_order", orderId: order.id },
+    );
 
     revalidatePath("/admin/pos");
     return { success: "เปิดบิลรับซื้อทองคำเก่าสำเร็จ", orderId: order.id };
@@ -263,6 +292,11 @@ export async function createTradeInAction(
       actorId: session.user.id,
     });
 
+    await postSafely(() => postTradeIn(prisma, tradeIn.id, session.user.id), {
+      module: "trade_in",
+      tradeInId: tradeIn.id,
+    });
+
     revalidatePath("/admin/pos");
     return { success: "ทำรายการเปลี่ยนทองคำสำเร็จ", tradeInId: tradeIn.id };
   } catch (err) {
@@ -300,6 +334,18 @@ export async function voidOrderAction(
       approverUsername,
       pin,
     });
+
+    await postSafely(
+      () => {
+        if (orderType === "SALES")
+          return postVoidSalesOrder(prisma, orderId, session.user.id);
+        if (orderType === "PURCHASE") {
+          return postVoidPurchaseOrder(prisma, orderId, session.user.id);
+        }
+        return postVoidTradeIn(prisma, orderId, session.user.id);
+      },
+      { module: "void_order", orderType, orderId },
+    );
 
     revalidatePath("/admin/pos/orders");
     return { success: `ทำการ Void บิลธุรกรรมประเภท ${orderType} สำเร็จแล้ว` };

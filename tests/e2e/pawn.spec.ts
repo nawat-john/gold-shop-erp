@@ -1,24 +1,10 @@
 // E2E: ขายฝากทอง (Phase 5) — เปิดสัญญาใหม่ -> เห็นในทะเบียน -> ไถ่ถอน
-import { expect, test, type Page } from "@playwright/test";
-
-const OWNER = {
-  username: "owner",
-  password: process.env.SEED_OWNER_PASSWORD ?? "ChangeMe-Owner-1",
-};
-
-async function loginAsOwner(page: Page) {
-  await page.goto("/login");
-  await page.fill('input[name="username"]', OWNER.username);
-  await page.fill('input[name="password"]', OWNER.password);
-  await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/admin/);
-}
+// login เป็น owner ทำครั้งเดียวใน auth.setup.ts (storageState) — ที่นี่แค่ navigate
+import { expect, test } from "@playwright/test";
 
 test("เปิดสัญญาขายฝากใหม่ -> เห็นในทะเบียน -> ไถ่ถอนสำเร็จ", async ({
   page,
 }) => {
-  await loginAsOwner(page);
-
   const customerName = `ลูกค้าทดสอบ E2E ${Date.now()}`;
 
   // 1) เปิดสัญญาขายฝากใหม่

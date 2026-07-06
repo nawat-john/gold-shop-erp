@@ -415,14 +415,14 @@
 
 ### Phase 7 — บัญชี การเงิน รายงาน Dashboard (สัปดาห์ 25–28)
 
-- [ ] Chart of accounts + posting rules: ทุกธุรกรรมจาก Phase 4–6 ลง journal อัตโนมัติ (backfill จากข้อมูลที่มี)
-- [ ] สมุดเงินสด/ธนาคาร + reconciliation
-- [ ] รายงาน VAT (ภ.พ.30 summary), ภาษีซื้อ-ขาย
-- [ ] งบทดลอง, P&L (แยกกำไรทอง/กำเหน็จ/ดอกเบี้ย), ฐานะการเงินเบื้องต้น
-- [ ] ปิดงวดบัญชี (period lock) — ธุรกรรมย้อนหลังในงวดปิดถูกปฏิเสธทั้งระบบ
-- [ ] ค่าใช้จ่าย + ค่าคอมมิชชั่นพนักงาน
-- [ ] Dashboard ผู้บริหาร + รายงานทั้งหมด (โมดูล I) + export CSV/Excel/PDF ผ่าน queue
-- [ ] **Test:** invariant Σdebit=Σcredit ทุกวัน, ธุรกรรมทุกชนิดมี posting rule ครบ (test enumerate), period lock กันได้จริง
+- [x] Chart of accounts (19 บัญชีมาตรฐาน, seed อัตโนมัติ) + posting rules ครบทุกธุรกรรม Phase 4-6 (ขาย/รับซื้อ/เปลี่ยนทอง/void ทั้งสาม, ขายฝากทุก event, ออมทองทุก tx, งานช่างรับมัดจำ+ส่งมอบซ่อม) ลง `journal_entries`/`journal_lines` อัตโนมัติผ่าน `postSafely()` ที่ action layer (ไม่บล็อกธุรกรรมหลักถ้าโพสต์ล้มเหลว) — backfill ย้อนหลัง idempotent เต็มรูปแบบ (`accounting-backfill.service.ts`)
+- [x] สมุดเงินสด/ธนาคาร (`getCashBankLedger` running balance) + reconciliation แบบเปรียบเทียบยอดบัญชีกับยอดนับจริง (`reconcileCashBank`) — ยังไม่มีการนำเข้ารายการเดินบัญชีธนาคารจริง (bank statement import) เพราะไม่มี adapter ธนาคารให้เชื่อม จึงเป็นการเทียบยอดเท่านั้น ไม่ใช่ auto-matching รายรายการ
+- [x] รายงาน VAT (`getVatReport`) — output VAT จากค่ากำเหน็จครบ; **input VAT (ภาษีซื้อ) ยังไม่ track** เพราะรับซื้อทองจากลูกค้าทั่วไป (บุคคลธรรมดา) ไม่มี VAT อยู่แล้วตามกฎหมาย และยังไม่มีการซื้อจากซัพพลายเออร์ที่มี VAT ในระบบ — เป็นข้อจำกัดที่ทราบ ระบุไว้ในโค้ดชัดเจน
+- [x] งบทดลอง (`getTrialBalance`, มี invariant check isBalanced), P&L แยกกำไรเนื้อทอง/ค่ากำเหน็จ/ดอกเบี้ย/ค่าซ่อม (`getProfitAndLoss`), ฐานะการเงินเบื้องต้น (`getBalanceSheetSummary` จัดกลุ่มสินทรัพย์/หนี้สิน/ทุน)
+- [x] ปิดงวดบัญชี (period lock, step-up PIN) — `assertPeriodOpen` เสียบเข้าไปในทุกจุดที่สร้าง/แก้ไขธุรกรรมทางการเงินของ POS/ขายฝาก/ออมทอง/งานช่าง/ค่าใช้จ่าย ปฏิเสธธุรกรรมย้อนหลังทั้งระบบจริงตามที่ทดสอบ
+- [x] ค่าใช้จ่าย (`expense.service.ts`, โพสต์บัญชีทันที) + ค่าคอมมิชชั่นพนักงาน (`commission.service.ts`, อัตรา configurable ผ่าน settings ค่าเริ่มต้นปิดใช้งาน, คำนวณจากค่ากำเหน็จสุทธิตอนขายสำเร็จ)
+- [ ] Dashboard ผู้บริหาร (โมดูล I) — มีแค่หน้าสรุปผังบัญชี/ใบสำคัญล่าสุดใน `/admin/accounting` ไม่ใช่ dashboard KPI รวมทุกโมดูล (ยอดขายรายวัน/สต๊อก/ขายฝากใกล้ครบกำหนด ฯลฯ) — และยังไม่มี export CSV/Excel/PDF ผ่าน queue เลย (ไม่มี BullMQ job สำหรับ export) — เป็น backlog ชัดเจนสำหรับรอบถัดไป
+- [x] **Test:** invariant Σdebit=Σcredit บังคับด้วย DEFERRABLE CONSTRAINT TRIGGER ระดับ DB (ทดสอบ bypass ตรงยืนยันว่าปฏิเสธจริง) + งบทดลอง isBalanced ทุกครั้งที่เรียก, golden test enumerate ทุก posting rule (35 เคส debit=credit), period lock กันธุรกรรมย้อนหลังได้จริงทดสอบข้ามทุกโมดูล
 
 ### Phase 8 — Hardening, Multi-branch สมบูรณ์, UAT (สัปดาห์ 29–32)
 

@@ -3,6 +3,7 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { seedRbac } from "../src/server/services/rbac-seed";
+import { seedChartOfAccounts } from "../src/server/services/accounting-seed";
 import { hashPassword } from "../src/server/security/password";
 
 const prisma = new PrismaClient({
@@ -16,6 +17,9 @@ const OWNER_PASSWORD = process.env.SEED_OWNER_PASSWORD ?? "ChangeMe-Owner-1";
 async function main() {
   await seedRbac(prisma);
   console.log("seed: RBAC catalog (permissions + system roles) เรียบร้อย");
+
+  await seedChartOfAccounts(prisma);
+  console.log("seed: ผังบัญชี (Chart of Accounts) เรียบร้อย");
 
   const hq = await prisma.branch.upsert({
     where: { code: "HQ" },

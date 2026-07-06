@@ -56,6 +56,15 @@ export const PERMISSIONS = {
   // Phase 6 — AMLO
   "amlo.view": "ดูรายการแจ้งเตือน AMLO และทะเบียนเฝ้าระวัง",
   "amlo.manage": "ตรวจทาน/รายงานธุรกรรม AMLO และจัดการทะเบียนเฝ้าระวัง",
+
+  // Phase 7 — Accounting & Finance
+  "accounting.view": "ดูผังบัญชี ใบสำคัญบัญชี และรายงานการเงิน",
+  "accounting.post": "บันทึกรายการบัญชีมือ (ค่าใช้จ่าย/ปรับปรุง)",
+  "accounting.period_lock": "ปิดงวดบัญชี (ต้องการ PIN ผู้อนุมัติ)",
+  "accounting.period_unlock":
+    "เปิดงวดบัญชีที่ปิดแล้วกลับมา (ต้องการ PIN ผู้อนุมัติ)",
+  "expense.manage": "บันทึกค่าใช้จ่ายของร้าน",
+  "commission.view": "ดูรายงานค่าคอมมิชชั่นพนักงาน",
 } as const;
 
 export type PermissionCode = keyof typeof PERMISSIONS;
@@ -122,6 +131,12 @@ export const SYSTEM_ROLES: Record<
       "workorder.cancel",
       "amlo.view",
       "amlo.manage",
+      "accounting.view",
+      "accounting.post",
+      "accounting.period_lock",
+      "accounting.period_unlock",
+      "expense.manage",
+      "commission.view",
     ],
   },
   CASHIER: {
@@ -161,7 +176,7 @@ export const SYSTEM_ROLES: Record<
   },
   ACCOUNTANT: {
     name: "ฝ่ายบัญชี",
-    description: "บัญชีและภาษี (สิทธิ์มาใน Phase 7)",
+    description: "บัญชีและภาษี",
     permissions: [
       "audit.view",
       "price.view",
@@ -169,6 +184,10 @@ export const SYSTEM_ROLES: Record<
       "customer.view",
       "savings.view",
       "amlo.view",
+      "accounting.view",
+      "accounting.post",
+      "expense.manage",
+      "commission.view",
     ],
   },
 };

@@ -14,6 +14,7 @@ import {
   formatDocumentNumber,
 } from "./document-number.service";
 import { writeAuditLog } from "./audit.service";
+import { assertPeriodOpen } from "./accounting.service";
 
 /** ล็อกแถวงานระดับ Postgres (FOR UPDATE) ก่อนอ่าน/แก้ไข — กัน transition ชนกัน */
 async function lockWorkOrder(db: Db, workOrderId: string): Promise<WorkOrder> {
@@ -62,8 +63,11 @@ export async function createWorkOrder(
   if (toleranceMg < 0n) throw new Error("ค่าเผื่อเศษทองห้ามติดลบ");
   if (serviceFeeSatang < 0n) throw new Error("ค่าบริการห้ามติดลบ");
 
+  const now = new Date();
+  await assertPeriodOpen(db, now);
+
   const branch = await db.branch.findUniqueOrThrow({ where: { id: branchId } });
-  const yearBE = new Date().getFullYear() + 543;
+  const yearBE = now.getFullYear() + 543;
   const prefix = type === WorkOrderType.CUSTOM_ORDER ? "WOC" : "WOR";
   const seqKey = buildSequenceKey(prefix, branch.code, yearBE);
   const nextNum = await allocateDocumentNumber(db, seqKey);
@@ -126,6 +130,7 @@ export interface IssueGoldParams {
 export async function issueGoldToCraftsman(db: Db, params: IssueGoldParams) {
   const { workOrderId, weightMg, actorId, requestId } = params;
   if (weightMg <= 0n) throw new Error("น้ำหนักทองที่เบิกต้องมากกว่า 0");
+  await assertPeriodOpen(db, new Date());
 
   const workOrder = await lockWorkOrder(db, workOrderId);
   if (workOrder.type !== WorkOrderType.CUSTOM_ORDER) {
@@ -173,6 +178,7 @@ export async function startWork(
   db: Db,
   params: { workOrderId: string; actorId: string; requestId?: string | null },
 ) {
+  await assertPeriodOpen(db, new Date());
   const workOrder = await lockWorkOrder(db, params.workOrderId);
   assertStatus(workOrder, WorkOrderStatus.RECEIVED);
 
@@ -207,10 +213,11 @@ export async function completeWorkOrder(
   db: Db,
   params: { workOrderId: string; actorId: string; requestId?: string | null },
 ) {
+  const now = new Date();
+  await assertPeriodOpen(db, now);
   const workOrder = await lockWorkOrder(db, params.workOrderId);
   assertStatus(workOrder, WorkOrderStatus.IN_PROGRESS);
 
-  const now = new Date();
   await db.workOrderEvent.create({
     data: {
       workOrderId: params.workOrderId,
@@ -241,10 +248,11 @@ export async function deliverWorkOrder(
   db: Db,
   params: { workOrderId: string; actorId: string; requestId?: string | null },
 ) {
+  const now = new Date();
+  await assertPeriodOpen(db, now);
   const workOrder = await lockWorkOrder(db, params.workOrderId);
   assertStatus(workOrder, WorkOrderStatus.COMPLETED);
 
-  const now = new Date();
   await db.workOrderEvent.create({
     data: {
       workOrderId: params.workOrderId,
@@ -283,6 +291,9 @@ export async function cancelWorkOrder(
   const { workOrderId, reason, actorId, requestId } = params;
   if (!reason.trim()) throw new Error("กรุณาระบุเหตุผลการยกเลิก");
 
+  const now = new Date();
+  await assertPeriodOpen(db, now);
+
   const workOrder = await lockWorkOrder(db, workOrderId);
   if (
     workOrder.status !== WorkOrderStatus.RECEIVED &&
@@ -290,8 +301,6 @@ export async function cancelWorkOrder(
   ) {
     throw new Error(`ไม่สามารถยกเลิกใบสั่งงานได้จากสถานะ ${workOrder.status}`);
   }
-
-  const now = new Date();
   await db.workOrderEvent.create({
     data: {
       workOrderId,

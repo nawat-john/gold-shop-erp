@@ -22,6 +22,8 @@ export const SETTING_KEYS = {
   loyaltyTierSilverPoints: "loyalty.tier_silver_points",
   /** แต้มสะสมขั้นต่ำสำหรับระดับ GOLD (default 5,000 แต้ม) */
   loyaltyTierGoldPoints: "loyalty.tier_gold_points",
+  /** อัตราค่าคอมมิชชั่นพนักงานขาย %/ยอดค่ากำเหน็จสุทธิ (default 0 = ปิดใช้งาน) */
+  commissionSaleRatePercent: "commission.sale_rate_percent",
 } as const;
 
 export async function getNumberSetting(

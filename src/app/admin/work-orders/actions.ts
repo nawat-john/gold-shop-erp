@@ -16,6 +16,10 @@ import {
   deliverWorkOrder,
   cancelWorkOrder,
 } from "@/server/services/work-order.service";
+import {
+  postLatestWorkOrderEvent,
+  postSafely,
+} from "@/server/services/accounting.service";
 
 async function requestId(): Promise<string | null> {
   return (await headers()).get("x-request-id");
@@ -74,6 +78,11 @@ export async function createWorkOrderAction(
         requestId: rid,
       }),
     );
+    await postSafely(
+      () => postLatestWorkOrderEvent(prisma, wo.id, session.user.id),
+      { module: "work_order_event", workOrderId: wo.id },
+    );
+
     revalidatePath("/admin/work-orders");
     return { success: `รับงาน ${wo.docNo} เรียบร้อยแล้ว` };
   } catch (err) {
@@ -208,6 +217,16 @@ export async function deliverWorkOrderAction(
         requestId: rid,
       }),
     );
+    await postSafely(
+      () =>
+        postLatestWorkOrderEvent(
+          prisma,
+          parsed.data.workOrderId,
+          session.user.id,
+        ),
+      { module: "work_order_event", workOrderId: parsed.data.workOrderId },
+    );
+
     revalidatePath(`/admin/work-orders/${parsed.data.workOrderId}`);
     revalidatePath("/admin/work-orders");
     return { success: "ส่งมอบงานให้ลูกค้าเรียบร้อยแล้ว" };
@@ -248,6 +267,16 @@ export async function cancelWorkOrderAction(
         requestId: rid,
       }),
     );
+    await postSafely(
+      () =>
+        postLatestWorkOrderEvent(
+          prisma,
+          parsed.data.workOrderId,
+          session.user.id,
+        ),
+      { module: "work_order_event", workOrderId: parsed.data.workOrderId },
+    );
+
     revalidatePath(`/admin/work-orders/${parsed.data.workOrderId}`);
     revalidatePath("/admin/work-orders");
     return { success: "ยกเลิกใบสั่งงานเรียบร้อยแล้ว" };

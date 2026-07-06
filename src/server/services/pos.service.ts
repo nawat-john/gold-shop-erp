@@ -28,6 +28,7 @@ import {
   evaluateAmloTrigger,
   isTransactionAboveAmloThreshold,
 } from "./amlo.service";
+import { assertPeriodOpen } from "./accounting.service";
 
 interface SalesItemParam {
   productId: string;
@@ -89,6 +90,7 @@ export async function createSalesOrder(
     }
 
     const now = new Date();
+    await assertPeriodOpen(tx, now);
     const priceSnapshot = await buildPriceSnapshot(tx, now);
 
     // 3) ดึงประกาศราคาสมาคมทองคำจาก snapshot เพื่อใช้คิดราคา
@@ -355,6 +357,7 @@ export async function createPurchaseOrder(
     }
 
     const now = new Date();
+    await assertPeriodOpen(tx, now);
     const priceSnapshot = await buildPriceSnapshot(tx, now);
 
     let totalAmountSatang = 0n;
@@ -715,6 +718,7 @@ export async function voidOrder(
     }
 
     const now = new Date();
+    await assertPeriodOpen(tx, now);
 
     if (orderType === "SALES") {
       const order = await tx.salesOrder.findUniqueOrThrow({

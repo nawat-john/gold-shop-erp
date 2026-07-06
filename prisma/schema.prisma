@@ -47,6 +47,7 @@ model Branch {
   pawnContracts    PawnContract[]
   savingsAccounts  SavingsAccount[]
   workOrders       WorkOrder[]
+  expenses         Expense[]
 
   @@map("branches")
 }
@@ -72,6 +73,7 @@ model User {
   sessions        Session[]
   userBranchRoles UserBranchRole[]
   recoveryCodes   RecoveryCode[]
+  commissions     Commission[]
 
   @@map("users")
 }
@@ -673,6 +675,7 @@ model SalesOrder {
   payments    Payment[]
   tradeIn     TradeIn?
   taxInvoices TaxInvoice[]
+  commission  Commission?
 
   @@map("sales_orders")
 }
@@ -1182,4 +1185,149 @@ model WorkOrderEvent {
 
   @@index([workOrderId, createdAt])
   @@map("work_order_events")
+}
+
+// ───────────────────────── Phase 7: Accounting, Finance, Reports ─────────────────────────
+// กติกาสำคัญ:
+// - ทุกธุรกรรมจาก Phase 4-6 ต้องมี posting rule ลง journal_entries/journal_lines (double-entry)
+// - journal_lines เป็น append-only (เหมือน pawn_events) — แก้ไขด้วยการกลับรายการ (reversal) เท่านั้น
+// - Σdebit = Σcredit ต่อ 1 journal_entry บังคับด้วย DEFERRABLE CONSTRAINT TRIGGER (เช็คตอน COMMIT)
+// - accounting_periods ปิดงวดแล้ว (LOCKED) ต้องปฏิเสธการโพสต์ธุรกรรมย้อนหลังทั้งระบบ
+// - นโยบายบัญชีบางจุดถูกทำให้ง่ายลงโดยเจตนา (ดูคอมเมนต์ใน accounting.service.ts/posting-rules.ts)
+//   ควรให้นักบัญชี/ที่ปรึกษาร้านทองรีวิวก่อนใช้งานจริง (ตามความเสี่ยงที่ระบุไว้ในแผน §9)
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+/// ผังบัญชี (Chart of Accounts) — seed มาตรฐานผ่าน accounting-seed.ts, ห้ามลบบัญชีระบบ
+model Account {
+  id       String      @id @default(uuid())
+  code     String      @unique
+  name     String
+  type     AccountType
+  isSystem Boolean     @default(true) @map("is_system")
+  isActive Boolean     @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  journalLines JournalLine[]
+  expenses     Expense[]
+
+  @@map("accounts")
+}
+
+enum AccountingPeriodStatus {
+  OPEN
+  LOCKED
+}
+
+/// งวดบัญชีรายเดือน — ปิดงวด (LOCKED) แล้วห้ามโพสต์ธุรกรรมวันที่อยู่ในงวดนั้นอีก
+model AccountingPeriod {
+  id         String                 @id @default(uuid())
+  /// เช่น "2569-04" (ปี พ.ศ.-เดือน) — สร้างอัตโนมัติเมื่อมีธุรกรรมแรกของเดือนนั้น
+  yearMonth  String                 @unique @map("year_month")
+  status     AccountingPeriodStatus @default(OPEN)
+  lockedAt   DateTime?              @map("locked_at")
+  lockedById String?                @map("locked_by_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  journalEntries JournalEntry[]
+  commissions    Commission[]
+
+  @@map("accounting_periods")
+}
+
+/// ใบสำคัญบัญชี (Journal Entry) — หนึ่งเอกสารต่อหนึ่งเหตุการณ์ทางบัญชี
+model JournalEntry {
+  id          String   @id @default(uuid())
+  /// เลขที่ใบสำคัญ จาก document_sequences เช่น "JE-2569-000001"
+  entryNo     String   @unique @map("entry_no")
+  periodId    String   @map("period_id")
+  entryDate   DateTime @map("entry_date")
+  description String
+  /// อ้างอิงเอกสารต้นทาง เช่น ("sales_order", id) — unique กันโพสต์ซ้ำ/ใช้ทำ backfill แบบ idempotent
+  refType     String?  @map("ref_type")
+  refId       String?  @map("ref_id")
+  /// true = รายการบันทึกมือ (ค่าใช้จ่าย/ปรับปรุง) ไม่ใช่ auto-post จากธุรกรรม
+  isManual    Boolean  @default(false) @map("is_manual")
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  period  AccountingPeriod @relation(fields: [periodId], references: [id])
+  lines   JournalLine[]
+  expense Expense?
+
+  @@unique([refType, refId])
+  @@index([periodId])
+  @@index([entryDate])
+  @@map("journal_entries")
+}
+
+/// บรรทัดรายการบัญชี — append-only (DB trigger กัน UPDATE/DELETE/TRUNCATE)
+/// แต่ละบรรทัดเป็น debit หรือ credit อย่างใดอย่างหนึ่งเท่านั้น (CHECK ระดับ DB)
+/// ผลรวม debit = credit ต่อ entry บังคับด้วย DEFERRABLE CONSTRAINT TRIGGER
+model JournalLine {
+  id           BigInt  @id @default(autoincrement())
+  entryId      String  @map("entry_id")
+  accountId    String  @map("account_id")
+  debitSatang  BigInt  @default(0) @map("debit_satang")
+  creditSatang BigInt  @default(0) @map("credit_satang")
+  memo         String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  entry   JournalEntry @relation(fields: [entryId], references: [id])
+  account Account      @relation(fields: [accountId], references: [id])
+
+  @@index([entryId])
+  @@index([accountId])
+  @@map("journal_lines")
+}
+
+/// ค่าใช้จ่ายทั่วไป — โพสต์ Dr บัญชีค่าใช้จ่ายที่เลือก / Cr เงินสด-ธนาคาร
+model Expense {
+  id             String   @id @default(uuid())
+  docNo          String   @unique @map("doc_no")
+  branchId       String   @map("branch_id")
+  accountId      String   @map("account_id")
+  amountSatang   BigInt   @map("amount_satang")
+  description    String
+  expenseDate    DateTime @map("expense_date")
+  journalEntryId String?  @unique @map("journal_entry_id")
+  createdBy      String   @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  branch       Branch        @relation(fields: [branchId], references: [id])
+  account      Account       @relation(fields: [accountId], references: [id])
+  journalEntry JournalEntry? @relation(fields: [journalEntryId], references: [id])
+
+  @@index([branchId, expenseDate])
+  @@map("expenses")
+}
+
+/// ค่าคอมมิชชั่นพนักงานต่อบิลขาย — คำนวณอัตโนมัติตอนขายสำเร็จ (rate configurable ผ่าน settings)
+model Commission {
+  id           String  @id @default(uuid())
+  staffId      String  @map("staff_id")
+  salesOrderId String  @unique @map("sales_order_id")
+  periodId     String  @map("period_id")
+  ratePercent  Decimal @map("rate_percent") @db.Decimal(5, 2)
+  amountSatang BigInt  @map("amount_satang")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  staff      User             @relation(fields: [staffId], references: [id])
+  salesOrder SalesOrder       @relation(fields: [salesOrderId], references: [id])
+  period     AccountingPeriod @relation(fields: [periodId], references: [id])
+
+  @@index([staffId, createdAt])
+  @@map("commissions")
 }

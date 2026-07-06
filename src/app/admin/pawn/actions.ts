@@ -16,6 +16,10 @@ import {
   adjustPrincipal,
   cancelContract,
 } from "@/server/services/pawn.service";
+import {
+  postLatestPawnEvent,
+  postSafely,
+} from "@/server/services/accounting.service";
 
 async function requestId(): Promise<string | null> {
   return (await headers()).get("x-request-id");
@@ -94,6 +98,11 @@ export async function openContractAction(
       });
     });
 
+    await postSafely(
+      () => postLatestPawnEvent(prisma, contract.id, session.user.id),
+      { module: "pawn_event", contractId: contract.id },
+    );
+
     revalidatePath("/admin/pawn");
     return { success: `เปิดสัญญาขายฝาก ${contract.docNo} เรียบร้อยแล้ว` };
   } catch (err) {
@@ -131,6 +140,12 @@ export async function renewInterestAction(
       });
     });
 
+    await postSafely(
+      () =>
+        postLatestPawnEvent(prisma, parsed.data.contractId, session.user.id),
+      { module: "pawn_event", contractId: parsed.data.contractId },
+    );
+
     revalidatePath("/admin/pawn");
     revalidatePath(`/admin/pawn/${parsed.data.contractId}`);
     return {
@@ -166,6 +181,12 @@ export async function redeemContractAction(
         requestId: rid,
       });
     });
+
+    await postSafely(
+      () =>
+        postLatestPawnEvent(prisma, parsed.data.contractId, session.user.id),
+      { module: "pawn_event", contractId: parsed.data.contractId },
+    );
 
     revalidatePath("/admin/pawn");
     revalidatePath(`/admin/pawn/${parsed.data.contractId}`);
@@ -214,6 +235,12 @@ export async function adjustPrincipalAction(
       });
     });
 
+    await postSafely(
+      () =>
+        postLatestPawnEvent(prisma, parsed.data.contractId, session.user.id),
+      { module: "pawn_event", contractId: parsed.data.contractId },
+    );
+
     revalidatePath("/admin/pawn");
     revalidatePath(`/admin/pawn/${parsed.data.contractId}`);
     return { success: "ปรับเงินต้นสัญญาสำเร็จ" };
@@ -257,6 +284,12 @@ export async function forfeitContractAction(
         requestId: rid,
       });
     });
+
+    await postSafely(
+      () =>
+        postLatestPawnEvent(prisma, parsed.data.contractId, session.user.id),
+      { module: "pawn_event", contractId: parsed.data.contractId },
+    );
 
     revalidatePath("/admin/pawn");
     revalidatePath(`/admin/pawn/${parsed.data.contractId}`);
@@ -302,6 +335,12 @@ export async function cancelContractAction(
         requestId: rid,
       });
     });
+
+    await postSafely(
+      () =>
+        postLatestPawnEvent(prisma, parsed.data.contractId, session.user.id),
+      { module: "pawn_event", contractId: parsed.data.contractId },
+    );
 
     revalidatePath("/admin/pawn");
     revalidatePath(`/admin/pawn/${parsed.data.contractId}`);

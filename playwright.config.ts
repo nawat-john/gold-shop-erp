@@ -12,8 +12,24 @@ export default defineConfig({
   },
   projects: [
     {
-      name: "chromium",
+      name: "setup",
+      testMatch: /auth\.setup\.ts/,
+    },
+    {
+      // auth.spec.ts / profile.spec.ts ทดสอบ login/logout เองจริง ๆ — รันแบบไม่ login ล่วงหน้า
+      name: "chromium-no-auth",
+      testMatch: /(auth|profile)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      // spec อื่น ๆ ใช้ session owner ที่ login ไว้แล้วจาก setup project (กัน login ซ้ำชน rate limiter)
+      name: "chromium",
+      testIgnore: /(auth|profile)\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "tests/e2e/.auth/owner.json",
+      },
+      dependencies: ["setup"],
     },
   ],
   webServer: {

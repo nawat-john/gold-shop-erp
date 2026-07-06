@@ -24,6 +24,17 @@ const NAV_ITEMS: { href: string; label: string; permission?: string }[] = [
     permission: "customer.view",
   },
   { href: "/admin/amlo", label: "AMLO", permission: "amlo.view" },
+  { href: "/admin/accounting", label: "บัญชี", permission: "accounting.view" },
+  {
+    href: "/admin/expenses",
+    label: "ค่าใช้จ่าย",
+    permission: "expense.manage",
+  },
+  {
+    href: "/admin/commissions",
+    label: "ค่าคอมมิชชั่น",
+    permission: "commission.view",
+  },
   { href: "/admin/users", label: "ผู้ใช้", permission: "user.view" },
   { href: "/admin/roles", label: "บทบาท", permission: "role.manage" },
   { href: "/admin/branches", label: "สาขา", permission: "branch.manage" },

@@ -26,6 +26,7 @@ import {
   evaluateAmloTrigger,
   isTransactionAboveAmloThreshold,
 } from "./amlo.service";
+import { assertPeriodOpen } from "./accounting.service";
 import {
   addMonths,
   calculateAccruedInterest,
@@ -127,13 +128,15 @@ export async function openContract(
     customerId = customer.id;
   }
 
+  const now = new Date();
+  await assertPeriodOpen(db, now);
+
   const branch = await db.branch.findUniqueOrThrow({ where: { id: branchId } });
-  const yearBE = new Date().getFullYear() + 543;
+  const yearBE = now.getFullYear() + 543;
   const seqKey = buildSequenceKey("PWN", branch.code, yearBE);
   const nextNum = await allocateDocumentNumber(db, seqKey);
   const docNo = formatDocumentNumber(seqKey, nextNum);
 
-  const now = new Date();
   const dueDate = addMonths(now, termMonths);
 
   const contract = await db.pawnContract.create({
@@ -230,6 +233,7 @@ export async function renewInterest(
     paymentDate = new Date(),
   }: RenewInterestParams,
 ) {
+  await assertPeriodOpen(db, paymentDate);
   const contract = await lockContract(db, contractId);
   assertActive(contract);
 
@@ -314,6 +318,7 @@ export async function redeemContract(
     redeemDate = new Date(),
   }: RedeemContractParams,
 ) {
+  await assertPeriodOpen(db, redeemDate);
   const contract = await lockContract(db, contractId);
   assertActive(contract);
 
@@ -410,6 +415,7 @@ export async function adjustPrincipal(
   }: AdjustPrincipalParams,
 ) {
   if (deltaSatang === 0n) throw new Error("จำนวนเงินที่ปรับต้องไม่เป็น 0");
+  await assertPeriodOpen(db, adjustmentDate);
 
   const contract = await lockContract(db, contractId);
   assertActive(contract);
@@ -522,6 +528,7 @@ export async function forfeitContract(
       `ยังไม่พ้นระยะผ่อนผัน ${graceDays} วันหลังครบกำหนด (ครบผ่อนผันวันที่ ${forfeitEligibleAt.toLocaleDateString("th-TH")})`,
     );
   }
+  await assertPeriodOpen(db, now);
 
   const approval = await requireApproval(db, {
     approverUsername,
@@ -655,6 +662,7 @@ export async function cancelContract(
   }
 
   const now = new Date();
+  await assertPeriodOpen(db, now);
 
   await db.pawnEvent.create({
     data: {

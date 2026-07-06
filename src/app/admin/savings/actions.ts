@@ -15,6 +15,10 @@ import {
   closeForCash,
   closeDefaulted,
 } from "@/server/services/savings.service";
+import {
+  postLatestSavingsTransaction,
+  postSafely,
+} from "@/server/services/accounting.service";
 
 async function requestId(): Promise<string | null> {
   return (await headers()).get("x-request-id");
@@ -104,6 +108,16 @@ export async function depositAction(
         requestId: rid,
       }),
     );
+    await postSafely(
+      () =>
+        postLatestSavingsTransaction(
+          prisma,
+          parsed.data.accountId,
+          session.user.id,
+        ),
+      { module: "savings_transaction", accountId: parsed.data.accountId },
+    );
+
     revalidatePath(`/admin/savings/${parsed.data.accountId}`);
     return { success: "รับฝากเงินเรียบร้อยแล้ว" };
   } catch (err) {
@@ -136,6 +150,16 @@ export async function closeForGoldAction(
         requestId: rid,
       }),
     );
+    await postSafely(
+      () =>
+        postLatestSavingsTransaction(
+          prisma,
+          parsed.data.accountId,
+          session.user.id,
+        ),
+      { module: "savings_transaction", accountId: parsed.data.accountId },
+    );
+
     revalidatePath(`/admin/savings/${parsed.data.accountId}`);
     revalidatePath("/admin/savings");
     return {
@@ -169,6 +193,16 @@ export async function closeForCashAction(
         requestId: rid,
       }),
     );
+    await postSafely(
+      () =>
+        postLatestSavingsTransaction(
+          prisma,
+          parsed.data.accountId,
+          session.user.id,
+        ),
+      { module: "savings_transaction", accountId: parsed.data.accountId },
+    );
+
     revalidatePath(`/admin/savings/${parsed.data.accountId}`);
     revalidatePath("/admin/savings");
     return {
@@ -217,6 +251,16 @@ export async function closeDefaultedAction(
         requestId: rid,
       }),
     );
+    await postSafely(
+      () =>
+        postLatestSavingsTransaction(
+          prisma,
+          parsed.data.accountId,
+          session.user.id,
+        ),
+      { module: "savings_transaction", accountId: parsed.data.accountId },
+    );
+
     revalidatePath(`/admin/savings/${parsed.data.accountId}`);
     revalidatePath("/admin/savings");
     return { success: "ปิดบัญชีกรณีผิดนัดเรียบร้อยแล้ว" };

@@ -16,6 +16,7 @@ import {
 } from "./document-number.service";
 import { requireApproval } from "./approval.service";
 import { writeAuditLog } from "./audit.service";
+import { assertPeriodOpen } from "./accounting.service";
 import {
   buildPriceSnapshot,
   getCurrentShopPrice,
@@ -77,8 +78,11 @@ export async function openAccount(
     throw new Error("เป้าหมายน้ำหนักทองต้องมากกว่า 0");
   }
 
+  const now = new Date();
+  await assertPeriodOpen(db, now);
+
   const branch = await db.branch.findUniqueOrThrow({ where: { id: branchId } });
-  const yearBE = new Date().getFullYear() + 543;
+  const yearBE = now.getFullYear() + 543;
   const seqKey = buildSequenceKey("SAV", branch.code, yearBE);
   const nextNum = await allocateDocumentNumber(db, seqKey);
   const docNo = formatDocumentNumber(seqKey, nextNum);
@@ -138,6 +142,7 @@ export async function deposit(db: Db, params: DepositParams) {
     depositDate = new Date(),
   } = params;
   if (amountSatang <= 0n) throw new Error("จำนวนเงินฝากต้องมากกว่า 0");
+  await assertPeriodOpen(db, depositDate);
 
   const account = await lockAccount(db, accountId);
   assertActive(account);
@@ -219,6 +224,7 @@ export interface CloseForGoldParams {
 /** ปิดบัญชีรับทอง — ครบเป้า/ลูกค้าขอรับทอง (ครบตามแผนออมทอง) */
 export async function closeForGold(db: Db, params: CloseForGoldParams) {
   const { accountId, actorId, requestId, closeDate = new Date() } = params;
+  await assertPeriodOpen(db, closeDate);
   const account = await lockAccount(db, accountId);
   assertActive(account);
 
@@ -273,6 +279,7 @@ export interface CloseForCashParams {
 /** ปิดบัญชีรับเงินคืน — ลูกค้ายกเลิกกลางคัน (ไม่มีค่าปรับ) */
 export async function closeForCash(db: Db, params: CloseForCashParams) {
   const { accountId, actorId, requestId, closeDate = new Date() } = params;
+  await assertPeriodOpen(db, closeDate);
   const account = await lockAccount(db, accountId);
   assertActive(account);
 
@@ -337,6 +344,7 @@ export async function closeDefaulted(db: Db, params: CloseDefaultedParams) {
     closeDate = new Date(),
   } = params;
   if (!reason.trim()) throw new Error("กรุณาระบุเหตุผลการปิดบัญชีกรณีผิดนัด");
+  await assertPeriodOpen(db, closeDate);
 
   const account = await lockAccount(db, accountId);
   assertActive(account);
