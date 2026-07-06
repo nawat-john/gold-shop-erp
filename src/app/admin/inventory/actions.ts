@@ -126,7 +126,6 @@ export async function createTransferAction(
   formData: FormData,
 ): Promise<FormState> {
   const session = await requireSession();
-  await requirePermission(prisma, session.user.id, "stock.transfer");
 
   const parsed = createTransferSchema.safeParse({
     fromBranchId: formData.get("fromBranchId"),
@@ -138,6 +137,13 @@ export async function createTransferAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
   }
+
+  await requirePermission(
+    prisma,
+    session.user.id,
+    "stock.transfer",
+    parsed.data.fromBranchId,
+  );
 
   const itemIds = parsed.data.itemIdsStr
     .split(",")
@@ -166,7 +172,15 @@ export async function createTransferAction(
 
 export async function sendTransferAction(transferId: string): Promise<void> {
   const session = await requireSession();
-  await requirePermission(prisma, session.user.id, "stock.transfer");
+  const transfer = await prisma.branchTransfer.findUniqueOrThrow({
+    where: { id: transferId },
+  });
+  await requirePermission(
+    prisma,
+    session.user.id,
+    "stock.transfer",
+    transfer.fromBranchId,
+  );
 
   const rid = await requestId();
   await prisma.$transaction(async (tx) => {
@@ -182,7 +196,15 @@ export async function sendTransferAction(transferId: string): Promise<void> {
 
 export async function receiveTransferAction(transferId: string): Promise<void> {
   const session = await requireSession();
-  await requirePermission(prisma, session.user.id, "stock.transfer");
+  const transfer = await prisma.branchTransfer.findUniqueOrThrow({
+    where: { id: transferId },
+  });
+  await requirePermission(
+    prisma,
+    session.user.id,
+    "stock.transfer",
+    transfer.toBranchId,
+  );
 
   const rid = await requestId();
   await prisma.$transaction(async (tx) => {
@@ -198,7 +220,15 @@ export async function receiveTransferAction(transferId: string): Promise<void> {
 
 export async function cancelTransferAction(transferId: string): Promise<void> {
   const session = await requireSession();
-  await requirePermission(prisma, session.user.id, "stock.transfer");
+  const transfer = await prisma.branchTransfer.findUniqueOrThrow({
+    where: { id: transferId },
+  });
+  await requirePermission(
+    prisma,
+    session.user.id,
+    "stock.transfer",
+    transfer.fromBranchId,
+  );
 
   const rid = await requestId();
   await prisma.$transaction(async (tx) => {

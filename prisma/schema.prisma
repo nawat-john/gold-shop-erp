@@ -41,6 +41,8 @@ model Branch {
   stockMovements   StockMovement[]
   transfersOut     BranchTransfer[]  @relation("TransferFrom")
   transfersIn      BranchTransfer[]  @relation("TransferTo")
+  cashTransfersOut CashTransfer[]    @relation("CashTransferFrom")
+  cashTransfersIn  CashTransfer[]    @relation("CashTransferTo")
   meltLots         MeltLot[]
   stockCounts      StockCount[]
   cashDrawers      CashDrawer[]
@@ -48,6 +50,7 @@ model Branch {
   savingsAccounts  SavingsAccount[]
   workOrders       WorkOrder[]
   expenses         Expense[]
+  journalEntries   JournalEntry[]
 
   @@map("branches")
 }
@@ -177,6 +180,8 @@ model AuditLog {
 
   @@index([entityType, entityId])
   @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([branchId, createdAt])
   @@map("audit_logs")
 }
 
@@ -509,6 +514,39 @@ model BranchTransferItem {
   @@map("branch_transfer_items")
 }
 
+/// โอนเงินสดระหว่างสาขา — 2-step confirm เหมือน BranchTransfer (ของ) แต่ไม่ลง GL:
+/// ผังบัญชีมีบัญชี "เงินสด" ใบเดียวรวมทุกสาขา ย้ายเงินระหว่างลิ้นชักไม่กระทบเงินสดรวมของบริษัท
+/// (ดู postJournalEntry — หนึ่ง entry ผูกกับหนึ่งสาขาเท่านั้น จึงลงบัญชีข้ามสาขาไม่ได้อยู่แล้ว)
+model CashTransfer {
+  id            String         @id @default(uuid())
+  /// เลขที่เอกสาร จาก document_sequences
+  docNo         String         @unique @map("doc_no")
+  fromBranchId  String         @map("from_branch_id")
+  toBranchId    String         @map("to_branch_id")
+  /// ลิ้นชักต้นทาง/ปลายทาง — เว้นว่างได้ถ้าเป็นเงินจากตู้เซฟ/ที่ไม่ผูกกับลิ้นชักขาย
+  fromDrawerId  String?        @map("from_drawer_id")
+  toDrawerId    String?        @map("to_drawer_id")
+  amountSatang  BigInt         @map("amount_satang")
+  status        TransferStatus @default(DRAFT)
+  createdBy     String         @map("created_by")
+  sentBy        String?        @map("sent_by")
+  sentAt        DateTime?      @map("sent_at")
+  receivedBy    String?        @map("received_by")
+  receivedAt    DateTime?      @map("received_at")
+  note          String?
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  fromBranch Branch      @relation("CashTransferFrom", fields: [fromBranchId], references: [id])
+  toBranch   Branch      @relation("CashTransferTo", fields: [toBranchId], references: [id])
+  fromDrawer CashDrawer? @relation("CashDrawerTransferFrom", fields: [fromDrawerId], references: [id])
+  toDrawer   CashDrawer? @relation("CashDrawerTransferTo", fields: [toDrawerId], references: [id])
+
+  @@index([fromBranchId, status])
+  @@index([toBranchId, status])
+  @@map("cash_transfers")
+}
+
 /// รอบส่งหลอม/คืนโรงงาน — รวมทองเก่า ชั่งน้ำหนักส่ง-รับ ดูผลต่าง
 enum MeltLotStatus {
   OPEN
@@ -617,6 +655,8 @@ model CashDrawer {
 
   branch Branch  @relation(fields: [branchId], references: [id])
   shifts Shift[]
+  cashTransfersOut CashTransfer[] @relation("CashDrawerTransferFrom")
+  cashTransfersIn  CashTransfer[] @relation("CashDrawerTransferTo")
 
   @@unique([branchId, code])
   @@map("cash_drawers")
@@ -1251,6 +1291,8 @@ model JournalEntry {
   /// เลขที่ใบสำคัญ จาก document_sequences เช่น "JE-2569-000001"
   entryNo     String   @unique @map("entry_no")
   periodId    String   @map("period_id")
+  /// สาขาต้นทางของธุรกรรม — หนึ่ง entry ผูกกับหนึ่งสาขาเสมอ (ธุรกรรมข้ามสาขา เช่น โอนเงินสด ไม่ลง GL เพราะไม่กระทบเงินสดรวม)
+  branchId    String   @map("branch_id")
   entryDate   DateTime @map("entry_date")
   description String
   /// อ้างอิงเอกสารต้นทาง เช่น ("sales_order", id) — unique กันโพสต์ซ้ำ/ใช้ทำ backfill แบบ idempotent
@@ -1262,12 +1304,14 @@ model JournalEntry {
   createdAt   DateTime @default(now()) @map("created_at")
 
   period  AccountingPeriod @relation(fields: [periodId], references: [id])
+  branch  Branch           @relation(fields: [branchId], references: [id])
   lines   JournalLine[]
   expense Expense?
 
   @@unique([refType, refId])
   @@index([periodId])
   @@index([entryDate])
+  @@index([branchId])
   @@map("journal_entries")
 }
 

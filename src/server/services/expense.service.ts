@@ -78,6 +78,7 @@ export async function recordExpense(db: Db, params: RecordExpenseParams) {
     lines,
     actorId,
     requestId,
+    branchId,
   });
 
   const finalExpense = entry

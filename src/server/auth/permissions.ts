@@ -24,6 +24,7 @@ export const PERMISSIONS = {
   "stock.count": "สร้างและตรวจนับสต๊อกสินค้า",
   "stock.adjust": "ปรับปรุงยอดสต๊อกสินค้า (ต้องการ PIN ผู้อนุมัติ)",
   "stock.melt": "จัดการส่งทองเก่าหลอม/คืนโรงงาน",
+  "cash.transfer": "จัดการโอนเงินสดข้ามสาขา (ต้องการ PIN ผู้อนุมัติตอนส่งเงิน)",
 
   // Phase 5 — Pawn (ขายฝาก)
   "pawn.view": "ดูสัญญาขายฝากและทะเบียนคุมทรัพย์",
@@ -65,6 +66,9 @@ export const PERMISSIONS = {
     "เปิดงวดบัญชีที่ปิดแล้วกลับมา (ต้องการ PIN ผู้อนุมัติ)",
   "expense.manage": "บันทึกค่าใช้จ่ายของร้าน",
   "commission.view": "ดูรายงานค่าคอมมิชชั่นพนักงาน",
+
+  // Phase 8 — Hardening
+  "fraud.view": "ดู Fraud Dashboard (รายการ void/ปรับสต๊อกผิดปกติ)",
 } as const;
 
 export type PermissionCode = keyof typeof PERMISSIONS;
@@ -110,6 +114,7 @@ export const SYSTEM_ROLES: Record<
       "stock.count",
       "stock.adjust",
       "stock.melt",
+      "cash.transfer",
       "pawn.view",
       "pawn.open",
       "pawn.renew",
@@ -137,6 +142,7 @@ export const SYSTEM_ROLES: Record<
       "accounting.period_unlock",
       "expense.manage",
       "commission.view",
+      "fraud.view",
     ],
   },
   CASHIER: {
@@ -188,6 +194,7 @@ export const SYSTEM_ROLES: Record<
       "accounting.post",
       "expense.manage",
       "commission.view",
+      "fraud.view",
     ],
   },
 };

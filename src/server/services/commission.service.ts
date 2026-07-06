@@ -72,6 +72,7 @@ export async function awardCommissionForSalesOrder(
     lines,
     actorId: params.actorId,
     requestId: params.requestId,
+    branchId: order.branchId,
   });
 
   await writeAuditLog(db, {

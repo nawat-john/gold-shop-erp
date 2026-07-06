@@ -145,6 +145,7 @@ describe("Accounting ledger writer (postJournalEntry)", () => {
         },
       ],
       actorId: cashierId,
+      branchId,
     });
     expect(entry).not.toBeNull();
 
@@ -175,6 +176,7 @@ describe("Accounting ledger writer (postJournalEntry)", () => {
           },
         ],
         actorId: cashierId,
+        branchId,
       }),
     ).rejects.toThrow("ไม่สมดุล");
   });
@@ -185,6 +187,7 @@ describe("Accounting ledger writer (postJournalEntry)", () => {
       description: "ไม่มีอะไรต้องลง",
       lines: [],
       actorId: cashierId,
+      branchId,
     });
     expect(entry).toBeNull();
   });
@@ -208,6 +211,7 @@ describe("Accounting ledger writer (postJournalEntry)", () => {
         },
       ],
       actorId: cashierId,
+      branchId,
     };
     const first = await postJournalEntry(db.prisma, params);
     const second = await postJournalEntry(db.prisma, params);
@@ -228,6 +232,7 @@ describe("Accounting ledger writer (postJournalEntry)", () => {
           data: {
             entryNo: `TEST-RAW-${Date.now()}`,
             periodId: period.id,
+            branchId,
             entryDate: new Date(),
             description: "ทดสอบ bypass",
             createdBy: cashierId,
@@ -290,6 +295,7 @@ describe("Accounting Period Lock", () => {
           },
         ],
         actorId: cashierId,
+        branchId,
       }),
     ).rejects.toThrow("ถูกปิดแล้ว");
 

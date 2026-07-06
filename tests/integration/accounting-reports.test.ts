@@ -206,4 +206,107 @@ describe("Accounting Reports", () => {
     expect(cashAsset?.balanceSatang).toBe(247_000n);
     expect(balanceSheet.totalAssetsSatang).toBeGreaterThan(0n);
   });
+
+  it("7. รายงานแบบระบุ branchId: กรองเฉพาะสาขานั้น ต่างจากยอดรวมศูนย์ (consolidated)", async () => {
+    // สาขาที่ 2 — โพสต์บิลขายอีกใบที่ไม่เกี่ยวกับสาขาแรกเลย
+    const branch2 = await db.prisma.branch.create({
+      data: { code: "RPT02", name: "สาขาทดสอบรายงานบัญชี 2" },
+    });
+    const drawer2 = await db.prisma.cashDrawer.create({
+      data: {
+        branchId: branch2.id,
+        code: "DRAWER-RPT2",
+        name: "ลิ้นชักสาขา 2",
+      },
+    });
+    const cashier2 = await db.prisma.user.create({
+      data: {
+        username: "rpt-cashier-2",
+        passwordHash: "$argon2id$dummy",
+        displayName: "พนักงานทดสอบรายงาน สาขา 2",
+      },
+    });
+    const shift2 = await openShift(db.prisma, {
+      branchId: branch2.id,
+      drawerId: drawer2.id,
+      openedById: cashier2.id,
+      startCashSatang: 500_000n,
+    });
+
+    const category = await db.prisma.productCategory.create({
+      data: { code: "RPT_JEWEL2", name: "ทดสอบรายงาน 2" },
+    });
+    const product = await db.prisma.product.create({
+      data: {
+        sku: "RPT-RING-002",
+        name: "แหวนทดสอบรายงาน 2",
+        categoryId: category.id,
+        tracking: ProductTracking.SERIALIZED,
+        goldPurity: 96.5,
+      },
+    });
+    const item = await db.prisma.inventoryItem.create({
+      data: {
+        serialNo: "RPT-TAG-002",
+        productId: product.id,
+        branchId: branch2.id,
+        status: "IN_STOCK",
+        weightMg: 15160n,
+        goldPurity: 96.5,
+        costSatang: 3_800_000n,
+      },
+    });
+    const order2 = await createSalesOrder(db.prisma, {
+      branchId: branch2.id,
+      shiftId: shift2.id,
+      items: [
+        {
+          productId: product.id,
+          itemId: item.id,
+          quantity: 1,
+          laborChargeSatang: 107_000n,
+        },
+      ],
+      payments: [
+        { paymentMethod: PaymentMethod.CASH, amountSatang: 4_167_000n },
+      ],
+      actorId: cashier2.id,
+    });
+    await postSalesOrder(db.prisma, order2.id, cashier2.id);
+
+    const consolidated = await getProfitAndLoss(db.prisma, fromDate, toDate);
+    const branch1Only = await getProfitAndLoss(
+      db.prisma,
+      fromDate,
+      toDate,
+      branchId,
+    );
+    const branch2Only = await getProfitAndLoss(
+      db.prisma,
+      fromDate,
+      toDate,
+      branch2.id,
+    );
+
+    // สาขา 1 เพียงลำพัง ต้องเท่ากับยอดที่เคยตรวจในเคส 2 (ก่อนสาขา 2 จะเข้ามา)
+    expect(branch1Only.goldProfitSatang).toBe(260_000n);
+    // สาขา 2 เพียงลำพัง มีกำไรเนื้อทองของตัวเอง
+    expect(branch2Only.goldProfitSatang).toBe(260_000n);
+    // ยอดรวมศูนย์ต้องเท่ากับผลรวมของทั้งสองสาขา ไม่ใช่แค่สาขาใดสาขาหนึ่ง
+    expect(consolidated.goldProfitSatang).toBe(
+      branch1Only.goldProfitSatang + branch2Only.goldProfitSatang,
+    );
+    expect(consolidated.goldProfitSatang).not.toBe(
+      branch1Only.goldProfitSatang,
+    );
+
+    const trialBalanceBranch1 = await getTrialBalance(db.prisma, {
+      branchId,
+    });
+    expect(trialBalanceBranch1.isBalanced).toBe(true);
+    const trialBalanceBranch2 = await getTrialBalance(db.prisma, {
+      branchId: branch2.id,
+    });
+    expect(trialBalanceBranch2.isBalanced).toBe(true);
+  });
 });

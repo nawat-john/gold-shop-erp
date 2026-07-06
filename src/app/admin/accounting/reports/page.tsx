@@ -20,23 +20,41 @@ function startOfMonth(date: Date): Date {
 export default async function AccountingReportsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; to?: string }>;
+  searchParams: Promise<{ from?: string; to?: string; branchId?: string }>;
 }) {
-  const { from, to } = await searchParams;
+  const { from, to, branchId } = await searchParams;
   const session = await requireSession();
   await requirePermission(prisma, session.user.id, "accounting.view");
 
   const now = new Date();
   const fromDate = from ? new Date(from) : startOfMonth(now);
   const toDate = to ? new Date(to) : now;
+  const selectedBranchId = branchId || undefined;
 
-  const [pnl, vat, cashLedger, bankLedger, balanceSheet] = await Promise.all([
-    getProfitAndLoss(prisma, fromDate, toDate),
-    getVatReport(prisma, fromDate, toDate),
-    getCashBankLedger(prisma, ACCOUNT_CODES.cash, fromDate, toDate),
-    getCashBankLedger(prisma, ACCOUNT_CODES.bank, fromDate, toDate),
-    getBalanceSheetSummary(prisma, toDate),
-  ]);
+  const [branches, pnl, vat, cashLedger, bankLedger, balanceSheet] =
+    await Promise.all([
+      prisma.branch.findMany({
+        where: { isActive: true },
+        orderBy: { code: "asc" },
+      }),
+      getProfitAndLoss(prisma, fromDate, toDate, selectedBranchId),
+      getVatReport(prisma, fromDate, toDate, selectedBranchId),
+      getCashBankLedger(
+        prisma,
+        ACCOUNT_CODES.cash,
+        fromDate,
+        toDate,
+        selectedBranchId,
+      ),
+      getCashBankLedger(
+        prisma,
+        ACCOUNT_CODES.bank,
+        fromDate,
+        toDate,
+        selectedBranchId,
+      ),
+      getBalanceSheetSummary(prisma, toDate, selectedBranchId),
+    ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -72,6 +90,21 @@ export default async function AccountingReportsPage({
             defaultValue={toDate.toISOString().slice(0, 10)}
             className="rounded border border-gray-300 px-3 py-1.5 text-sm"
           />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold text-gray-700">สาขา</label>
+          <select
+            name="branchId"
+            defaultValue={selectedBranchId ?? ""}
+            className="rounded border border-gray-300 px-3 py-1.5 text-sm"
+          >
+            <option value="">ทุกสาขา (รวมศูนย์)</option>
+            {branches.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.code} — {b.name}
+              </option>
+            ))}
+          </select>
         </div>
         <button
           type="submit"

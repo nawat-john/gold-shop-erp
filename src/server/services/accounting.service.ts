@@ -150,6 +150,8 @@ export interface PostJournalEntryParams {
   actorId: string;
   requestId?: string | null;
   isManual?: boolean;
+  /** สาขาต้นทางของธุรกรรม — บังคับเสมอ เพราะหนึ่ง entry ผูกกับหนึ่งสาขา (ดูหมายเหตุ schema.prisma) */
+  branchId: string;
 }
 
 /**
@@ -172,6 +174,7 @@ export async function postJournalEntry(
     actorId,
     requestId,
     isManual = false,
+    branchId,
   } = params;
 
   if (lines.length === 0) return null;
@@ -216,6 +219,7 @@ export async function postJournalEntry(
     data: {
       entryNo,
       periodId: period.id,
+      branchId,
       entryDate,
       description,
       refType: refType ?? null,
@@ -263,6 +267,7 @@ async function postVoidEntry(
     entryDate: Date;
     actorId: string;
     requestId?: string | null;
+    branchId: string;
   },
 ): Promise<JournalEntry | null> {
   const original = await db.journalEntry.findFirst({
@@ -288,6 +293,7 @@ async function postVoidEntry(
     lines: reversedLines,
     actorId: params.actorId,
     requestId: params.requestId,
+    branchId: params.branchId,
   });
 }
 
@@ -338,6 +344,7 @@ export async function postSalesOrder(
     lines,
     actorId,
     requestId,
+    branchId: order.branchId,
   });
 }
 
@@ -358,6 +365,7 @@ export async function postVoidSalesOrder(
     entryDate: new Date(),
     actorId,
     requestId,
+    branchId: order.branchId,
   });
 }
 
@@ -388,6 +396,7 @@ export async function postPurchaseOrder(
     lines,
     actorId,
     requestId,
+    branchId: order.branchId,
   });
 }
 
@@ -408,6 +417,7 @@ export async function postVoidPurchaseOrder(
     entryDate: new Date(),
     actorId,
     requestId,
+    branchId: order.branchId,
   });
 }
 
@@ -466,6 +476,7 @@ export async function postTradeIn(
     lines,
     actorId,
     requestId,
+    branchId: tradeIn.salesOrder.branchId,
   });
 }
 
@@ -477,6 +488,7 @@ export async function postVoidTradeIn(
 ) {
   const tradeIn = await db.tradeIn.findUniqueOrThrow({
     where: { id: tradeInId },
+    include: { salesOrder: true },
   });
   return postVoidEntry(db, {
     originalRefType: "trade_in",
@@ -486,6 +498,7 @@ export async function postVoidTradeIn(
     entryDate: new Date(),
     actorId,
     requestId,
+    branchId: tradeIn.salesOrder.branchId,
   });
 }
 
@@ -524,6 +537,7 @@ export async function postPawnEvent(
     lines,
     actorId,
     requestId,
+    branchId: event.contract.branchId,
   });
 }
 
@@ -568,6 +582,7 @@ export async function postSavingsTransaction(
     lines,
     actorId,
     requestId,
+    branchId: tx.account.branchId,
   });
 }
 
@@ -607,6 +622,7 @@ export async function postWorkOrderEvent(
     lines,
     actorId,
     requestId,
+    branchId: event.workOrder.branchId,
   });
 }
 

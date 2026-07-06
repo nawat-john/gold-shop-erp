@@ -24,6 +24,10 @@ export const SETTING_KEYS = {
   loyaltyTierGoldPoints: "loyalty.tier_gold_points",
   /** อัตราค่าคอมมิชชั่นพนักงานขาย %/ยอดค่ากำเหน็จสุทธิ (default 0 = ปิดใช้งาน) */
   commissionSaleRatePercent: "commission.sale_rate_percent",
+  /** อัตรา void ต่อพนักงาน (%) ที่เกินถือว่าผิดปกติใน fraud dashboard (default 20) */
+  fraudVoidRateAlertPercent: "fraud.void_rate_alert_percent",
+  /** จำนวนครั้งอนุมัติปรับสต๊อกต่อคนในช่วงเวลาที่ดู ที่เกินถือว่าผิดปกติ (default 5) */
+  fraudStockAdjustAlertCount: "fraud.stock_adjust_alert_count",
 } as const;
 
 export async function getNumberSetting(

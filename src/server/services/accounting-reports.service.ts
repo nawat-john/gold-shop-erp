@@ -21,16 +21,23 @@ export interface TrialBalanceReport {
   isBalanced: boolean;
 }
 
-/** งบทดลอง — สรุปยอด debit/credit สะสมทุกบัญชี ณ วันที่กำหนด (หรือทั้งหมดถ้าไม่ระบุ) */
+/** งบทดลอง — สรุปยอด debit/credit สะสมทุกบัญชี ณ วันที่กำหนด (หรือทั้งหมดถ้าไม่ระบุ)
+ * ไม่ระบุ branchId = รวมทุกสาขา (consolidated), ระบุ = เฉพาะสาขานั้น */
 export async function getTrialBalance(
   db: Db,
-  params: { asOfDate?: Date } = {},
+  params: { asOfDate?: Date; branchId?: string } = {},
 ): Promise<TrialBalanceReport> {
   const accounts = await db.account.findMany({ orderBy: { code: "asc" } });
+  const hasEntryFilter = params.asOfDate || params.branchId;
   const lines = await db.journalLine.groupBy({
     by: ["accountId"],
-    where: params.asOfDate
-      ? { entry: { entryDate: { lte: params.asOfDate } } }
+    where: hasEntryFilter
+      ? {
+          entry: {
+            ...(params.asOfDate ? { entryDate: { lte: params.asOfDate } } : {}),
+            ...(params.branchId ? { branchId: params.branchId } : {}),
+          },
+        }
       : undefined,
     _sum: { debitSatang: true, creditSatang: true },
   });
@@ -74,13 +81,17 @@ async function sumAccountCredit(
   code: string,
   fromDate: Date,
   toDate: Date,
+  branchId?: string,
 ): Promise<bigint> {
   const account = await db.account.findUnique({ where: { code } });
   if (!account) return 0n;
   const agg = await db.journalLine.aggregate({
     where: {
       accountId: account.id,
-      entry: { entryDate: { gte: fromDate, lte: toDate } },
+      entry: {
+        entryDate: { gte: fromDate, lte: toDate },
+        ...(branchId ? { branchId } : {}),
+      },
     },
     _sum: { creditSatang: true },
   });
@@ -92,13 +103,17 @@ async function sumAccountDebit(
   code: string,
   fromDate: Date,
   toDate: Date,
+  branchId?: string,
 ): Promise<bigint> {
   const account = await db.account.findUnique({ where: { code } });
   if (!account) return 0n;
   const agg = await db.journalLine.aggregate({
     where: {
       accountId: account.id,
-      entry: { entryDate: { gte: fromDate, lte: toDate } },
+      entry: {
+        entryDate: { gte: fromDate, lte: toDate },
+        ...(branchId ? { branchId } : {}),
+      },
     },
     _sum: { debitSatang: true },
   });
@@ -124,11 +139,13 @@ export interface ProfitAndLossReport {
   netProfitSatang: bigint;
 }
 
-/** งบกำไรขาดทุน แยกกำไรเนื้อทอง/ค่ากำเหน็จ/ดอกเบี้ย ตามช่วงวันที่ */
+/** งบกำไรขาดทุน แยกกำไรเนื้อทอง/ค่ากำเหน็จ/ดอกเบี้ย ตามช่วงวันที่
+ * ไม่ระบุ branchId = รวมทุกสาขา (consolidated), ระบุ = เฉพาะสาขานั้น */
 export async function getProfitAndLoss(
   db: Db,
   fromDate: Date,
   toDate: Date,
+  branchId?: string,
 ): Promise<ProfitAndLossReport> {
   const [
     goldRevenueSatang,
@@ -142,16 +159,70 @@ export async function getProfitAndLoss(
     commissionExpenseSatang,
     cardFeeSatang,
   ] = await Promise.all([
-    sumAccountCredit(db, ACCOUNT_CODES.salesRevenueGold, fromDate, toDate),
-    sumAccountDebit(db, ACCOUNT_CODES.cogsGold, fromDate, toDate),
-    sumAccountCredit(db, ACCOUNT_CODES.salesRevenueLabor, fromDate, toDate),
-    sumAccountCredit(db, ACCOUNT_CODES.interestIncomePawn, fromDate, toDate),
-    sumAccountCredit(db, ACCOUNT_CODES.repairServiceIncome, fromDate, toDate),
-    sumAccountCredit(db, ACCOUNT_CODES.savingsPriceGain, fromDate, toDate),
-    sumAccountDebit(db, ACCOUNT_CODES.savingsPriceLoss, fromDate, toDate),
-    sumAccountDebit(db, ACCOUNT_CODES.generalExpenses, fromDate, toDate),
-    sumAccountDebit(db, ACCOUNT_CODES.commissionExpense, fromDate, toDate),
-    sumAccountDebit(db, ACCOUNT_CODES.cardProcessingFee, fromDate, toDate),
+    sumAccountCredit(
+      db,
+      ACCOUNT_CODES.salesRevenueGold,
+      fromDate,
+      toDate,
+      branchId,
+    ),
+    sumAccountDebit(db, ACCOUNT_CODES.cogsGold, fromDate, toDate, branchId),
+    sumAccountCredit(
+      db,
+      ACCOUNT_CODES.salesRevenueLabor,
+      fromDate,
+      toDate,
+      branchId,
+    ),
+    sumAccountCredit(
+      db,
+      ACCOUNT_CODES.interestIncomePawn,
+      fromDate,
+      toDate,
+      branchId,
+    ),
+    sumAccountCredit(
+      db,
+      ACCOUNT_CODES.repairServiceIncome,
+      fromDate,
+      toDate,
+      branchId,
+    ),
+    sumAccountCredit(
+      db,
+      ACCOUNT_CODES.savingsPriceGain,
+      fromDate,
+      toDate,
+      branchId,
+    ),
+    sumAccountDebit(
+      db,
+      ACCOUNT_CODES.savingsPriceLoss,
+      fromDate,
+      toDate,
+      branchId,
+    ),
+    sumAccountDebit(
+      db,
+      ACCOUNT_CODES.generalExpenses,
+      fromDate,
+      toDate,
+      branchId,
+    ),
+    sumAccountDebit(
+      db,
+      ACCOUNT_CODES.commissionExpense,
+      fromDate,
+      toDate,
+      branchId,
+    ),
+    sumAccountDebit(
+      db,
+      ACCOUNT_CODES.cardProcessingFee,
+      fromDate,
+      toDate,
+      branchId,
+    ),
   ]);
 
   const goldProfitSatang = goldRevenueSatang - cogsGoldSatang;
@@ -198,17 +269,20 @@ export interface VatReport {
   netVatPayableSatang: bigint;
 }
 
-/** รายงาน VAT สรุปสำหรับยื่น ภ.พ.30 — คำนวณจากบัญชีภาษีขายค้างจ่าย */
+/** รายงาน VAT สรุปสำหรับยื่น ภ.พ.30 — คำนวณจากบัญชีภาษีขายค้างจ่าย
+ * ไม่ระบุ branchId = รวมทุกสาขา (consolidated), ระบุ = เฉพาะสาขานั้น */
 export async function getVatReport(
   db: Db,
   fromDate: Date,
   toDate: Date,
+  branchId?: string,
 ): Promise<VatReport> {
   const outputVatSatang = await sumAccountCredit(
     db,
     ACCOUNT_CODES.vatPayable,
     fromDate,
     toDate,
+    branchId,
   );
   const inputVatSatang = 0n;
 
@@ -230,12 +304,14 @@ export interface CashBankLedgerRow {
   runningBalanceSatang: bigint;
 }
 
-/** สมุดเงินสด/ธนาคาร — รายการเดินบัญชีพร้อมยอดคงเหลือสะสม (running balance) */
+/** สมุดเงินสด/ธนาคาร — รายการเดินบัญชีพร้อมยอดคงเหลือสะสม (running balance)
+ * ไม่ระบุ branchId = รวมทุกสาขา (consolidated), ระบุ = เฉพาะสาขานั้น */
 export async function getCashBankLedger(
   db: Db,
   accountCode: string,
   fromDate: Date,
   toDate: Date,
+  branchId?: string,
 ): Promise<CashBankLedgerRow[]> {
   const account = await db.account.findUnique({ where: { code: accountCode } });
   if (!account) return [];
@@ -243,7 +319,10 @@ export async function getCashBankLedger(
   const lines = await db.journalLine.findMany({
     where: {
       accountId: account.id,
-      entry: { entryDate: { gte: fromDate, lte: toDate } },
+      entry: {
+        entryDate: { gte: fromDate, lte: toDate },
+        ...(branchId ? { branchId } : {}),
+      },
     },
     include: { entry: true },
     orderBy: [{ entry: { entryDate: "asc" } }, { id: "asc" }],
@@ -273,10 +352,16 @@ export interface CashBankReconciliation {
 /**
  * กระทบยอดเงินสด/ธนาคาร — เทียบยอดตามบัญชีกับยอดนับจริง ณ วันที่กำหนด
  * (รายงานเปรียบเทียบเท่านั้น ไม่มีการนำเข้ารายการเดินบัญชีธนาคารจริงในเฟสนี้)
+ * ไม่ระบุ branchId = รวมทุกสาขา (consolidated), ระบุ = เฉพาะสาขานั้น
  */
 export async function reconcileCashBank(
   db: Db,
-  params: { accountCode: string; asOfDate: Date; actualCountedSatang: bigint },
+  params: {
+    accountCode: string;
+    asOfDate: Date;
+    actualCountedSatang: bigint;
+    branchId?: string;
+  },
 ): Promise<CashBankReconciliation> {
   const account = await db.account.findUnique({
     where: { code: params.accountCode },
@@ -293,7 +378,10 @@ export async function reconcileCashBank(
   const agg = await db.journalLine.aggregate({
     where: {
       accountId: account.id,
-      entry: { entryDate: { lte: params.asOfDate } },
+      entry: {
+        entryDate: { lte: params.asOfDate },
+        ...(params.branchId ? { branchId: params.branchId } : {}),
+      },
     },
     _sum: { debitSatang: true, creditSatang: true },
   });
@@ -318,12 +406,14 @@ export interface BalanceSheetSummary {
   equityRows: TrialBalanceRow[];
 }
 
-/** ฐานะการเงินเบื้องต้น (Balance Sheet เบื้องต้น) — จัดกลุ่มยอดคงเหลือตามประเภทบัญชี ณ วันที่กำหนด */
+/** ฐานะการเงินเบื้องต้น (Balance Sheet เบื้องต้น) — จัดกลุ่มยอดคงเหลือตามประเภทบัญชี ณ วันที่กำหนด
+ * ไม่ระบุ branchId = รวมทุกสาขา (consolidated), ระบุ = เฉพาะสาขานั้น */
 export async function getBalanceSheetSummary(
   db: Db,
   asOfDate: Date,
+  branchId?: string,
 ): Promise<BalanceSheetSummary> {
-  const trialBalance = await getTrialBalance(db, { asOfDate });
+  const trialBalance = await getTrialBalance(db, { asOfDate, branchId });
 
   const assetRows = trialBalance.rows.filter((r) => r.type === "ASSET");
   const liabilityRows = trialBalance.rows.filter((r) => r.type === "LIABILITY");
