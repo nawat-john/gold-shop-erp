@@ -9,6 +9,7 @@ import {
   AcquisitionSource,
   StockMovementType,
   ProductTracking,
+  AmloRefType,
   type PawnContract,
 } from "@/generated/prisma/client";
 import { encryptString, hmacHash } from "@/server/security/crypto";
@@ -20,6 +21,11 @@ import {
 import { requireApproval } from "./approval.service";
 import { writeAuditLog } from "./audit.service";
 import { SETTING_KEYS, getNumberSetting } from "./settings.service";
+import { findOrCreateCustomerFromInline } from "./customer.service";
+import {
+  evaluateAmloTrigger,
+  isTransactionAboveAmloThreshold,
+} from "./amlo.service";
 import {
   addMonths,
   calculateAccruedInterest,
@@ -51,6 +57,8 @@ async function lockContract(db: Db, contractId: string): Promise<PawnContract> {
 
 export interface OpenPawnContractParams {
   branchId: string;
+  /** ลูกค้าที่ลงทะเบียน CRM ไว้ล่วงหน้า — ถ้าไม่ระบุแต่มี customerCitizenId และเข้าเกณฑ์ AMLO จะลงทะเบียนอัตโนมัติ */
+  customerId?: string | null;
   customerName: string;
   customerPhone?: string | null;
   customerCitizenId?: string | null;
@@ -89,6 +97,7 @@ export async function openContract(
     actorId,
     requestId,
   } = params;
+  let { customerId } = params;
 
   if (weightMg <= 0n) throw new Error("น้ำหนักทองต้องมากกว่า 0 มิลลิกรัม");
   if (goldPurity <= 0 || goldPurity > 100) {
@@ -103,6 +112,21 @@ export async function openContract(
   const cap = await getInterestRateCap(db);
   validateInterestRate(annualInterestRatePercent, cap);
 
+  // เกินเพดาน AMLO และยังไม่มีลูกค้าลงทะเบียน CRM ล่วงหน้า -> ลงทะเบียนอัตโนมัติจากข้อมูล inline (บังคับ KYC)
+  if (
+    !customerId &&
+    customerCitizenId &&
+    (await isTransactionAboveAmloThreshold(db, principalSatang))
+  ) {
+    const customer = await findOrCreateCustomerFromInline(db, {
+      name: customerName,
+      phone: customerPhone,
+      citizenId: customerCitizenId,
+      actorId,
+    });
+    customerId = customer.id;
+  }
+
   const branch = await db.branch.findUniqueOrThrow({ where: { id: branchId } });
   const yearBE = new Date().getFullYear() + 543;
   const seqKey = buildSequenceKey("PWN", branch.code, yearBE);
@@ -116,6 +140,7 @@ export async function openContract(
     data: {
       docNo,
       branchId,
+      customerId: customerId ?? null,
       status: PawnContractStatus.ACTIVE,
       customerName: customerName.trim(),
       customerPhone: customerPhone ?? null,
@@ -166,6 +191,15 @@ export async function openContract(
       termMonths,
       dueDate: dueDate.toISOString(),
     },
+  });
+
+  await evaluateAmloTrigger(db, {
+    customerId,
+    amountSatang: principalSatang,
+    refType: AmloRefType.PAWN_CONTRACT,
+    refId: contract.id,
+    actorId,
+    requestId,
   });
 
   return contract;

@@ -33,6 +33,29 @@ export const PERMISSIONS = {
   "pawn.adjust_principal": "เพิ่ม/ลดเงินต้นสัญญาขายฝาก",
   "pawn.forfeit": "อนุมัติทองหลุด โอนเข้าสต๊อก (ต้องการ PIN ผู้อนุมัติ)",
   "pawn.cancel": "ยกเลิกสัญญาขายฝาก (ต้องการ PIN ผู้อนุมัติ)",
+
+  // Phase 6 — CRM
+  "customer.view": "ดูโปรไฟล์ลูกค้าและประวัติธุรกรรม",
+  "customer.manage": "สร้าง/แก้ไขโปรไฟล์ลูกค้า",
+  "customer.view_pii": "ดูข้อมูลอ่อนไหวลูกค้าแบบไม่ถูก mask (เลขบัตร ปชช.)",
+  "customer.anonymize":
+    "ล้างข้อมูลส่วนตัวลูกค้าตามสิทธิ์ถูกลืม PDPA (ต้องการ PIN ผู้อนุมัติ)",
+
+  // Phase 6 — Gold Savings
+  "savings.view": "ดูบัญชีออมทองและรายงานภาระผูกพัน",
+  "savings.open": "เปิดบัญชีออมทองใหม่",
+  "savings.deposit": "รับฝากเงิน/น้ำหนักเข้าบัญชีออมทอง",
+  "savings.close": "ปิดบัญชีออมทอง (รับทอง/รับเงินคืน)",
+  "savings.cancel": "ปิดบัญชีออมทองกรณีผิดนัด (ต้องการ PIN ผู้อนุมัติ)",
+
+  // Phase 6 — Work Orders
+  "workorder.view": "ดูใบสั่งงานช่าง/ซ่อม",
+  "workorder.manage": "สร้าง/อัปเดตสถานะใบสั่งงานช่าง/ซ่อม",
+  "workorder.cancel": "ยกเลิกใบสั่งงานช่าง/ซ่อม",
+
+  // Phase 6 — AMLO
+  "amlo.view": "ดูรายการแจ้งเตือน AMLO และทะเบียนเฝ้าระวัง",
+  "amlo.manage": "ตรวจทาน/รายงานธุรกรรม AMLO และจัดการทะเบียนเฝ้าระวัง",
 } as const;
 
 export type PermissionCode = keyof typeof PERMISSIONS;
@@ -85,6 +108,20 @@ export const SYSTEM_ROLES: Record<
       "pawn.adjust_principal",
       "pawn.forfeit",
       "pawn.cancel",
+      "customer.view",
+      "customer.manage",
+      "customer.view_pii",
+      "customer.anonymize",
+      "savings.view",
+      "savings.open",
+      "savings.deposit",
+      "savings.close",
+      "savings.cancel",
+      "workorder.view",
+      "workorder.manage",
+      "workorder.cancel",
+      "amlo.view",
+      "amlo.manage",
     ],
   },
   CASHIER: {
@@ -98,6 +135,14 @@ export const SYSTEM_ROLES: Record<
       "pawn.open",
       "pawn.renew",
       "pawn.redeem",
+      "customer.view",
+      "customer.manage",
+      "savings.view",
+      "savings.open",
+      "savings.deposit",
+      "savings.close",
+      "workorder.view",
+      "workorder.manage",
     ],
   },
   STOCK_KEEPER: {
@@ -111,11 +156,19 @@ export const SYSTEM_ROLES: Record<
       "stock.count",
       "stock.melt",
       "pawn.view",
+      "workorder.view",
     ],
   },
   ACCOUNTANT: {
     name: "ฝ่ายบัญชี",
     description: "บัญชีและภาษี (สิทธิ์มาใน Phase 7)",
-    permissions: ["audit.view", "price.view", "pawn.view"],
+    permissions: [
+      "audit.view",
+      "price.view",
+      "pawn.view",
+      "customer.view",
+      "savings.view",
+      "amlo.view",
+    ],
   },
 };

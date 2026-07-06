@@ -406,12 +406,12 @@
 
 ### Phase 6 — ออมทอง + งานช่าง + CRM/AMLO (สัปดาห์ 21–24)
 
-- [ ] ออมทอง: เปิดบัญชี (ออมเงิน/ออมน้ำหนัก), ฝากรายงวด, statement, ปิดรับทอง/รับเงิน, liability report
-- [ ] Work orders: สั่งทำ (มัดจำ, เบิกทองช่าง, tolerance เศษทอง), ซ่อม (รับของ-คืนของ, ค่าบริการ), คิวงาน
-- [ ] CRM: โปรไฟล์ลูกค้า, ประวัติทุกธุรกรรม, แต้ม/ระดับ (configurable), mock smart card reader
-- [ ] AMLO engine: threshold rules, บังคับ KYC, สร้าง/export รายงาน, ทะเบียน watchlist
-- [ ] PDPA: consent, masking ตาม role, anonymize workflow
-- [ ] **Test:** ออมทองปิดบัญชีทุกกรณี (ครบ/ยกเลิก/ผิดนัด), AMLO trigger ตาม threshold ถูกต้อง
+- [x] ออมทอง: เปิดบัญชี (ออมเงิน/ออมน้ำหนัก), ฝาก (แปลงทันทีสำหรับออมน้ำหนัก, สะสมตรงๆ สำหรับออมเงิน), statement, ปิดรับทอง/รับเงิน/ผิดนัด (step-up PIN), liability report — `savings.service.ts`, ledger `savings_transactions` append-only เหมือน pawn_events; ฝากรายงวดอัตโนมัติ (scheduled) ยังไม่ทำ (ฝากเป็นรายครั้งที่พนักงานบันทึกให้ ไม่มี batch job แจ้งเตือน/หักบัญชีอัตโนมัติ)
+- [x] Work orders: สั่งทำ (มัดจำ, เบิกทองช่างสะสมหลายครั้ง, tolerance เศษทอง), ซ่อม (รับงาน-เริ่มงาน-เสร็จ-ส่งมอบ, ค่าบริการ), คิวงาน (`/admin/work-orders` เรียง FIFO ตามกำหนดส่ง) — `work-order.service.ts`
+- [x] CRM: โปรไฟล์ลูกค้า (กันลงทะเบียนซ้ำด้วยเลขบัตร ปชช.), ประวัติทุกธุรกรรมรวมข้ามโมดูล (ขาย/รับซื้อ/ขายฝาก/ออมทอง/งานช่าง), แต้ม/ระดับ configurable (BRONZE/SILVER/GOLD ผ่าน settings), mock smart card reader (`src/server/hardware/id-card-reader.ts`) — `customer.service.ts`
+- [x] AMLO engine: เพดานเงินสด configurable (default 2,000,000 บาท) บังคับ KYC ก่อนทำรายการเกินเพดาน (ขายฝาก + รับซื้อทองคืน — ยังไม่ครอบคลุมบิลขายหน้าร้านเพราะ POS ยังไม่เก็บข้อมูลลูกค้า), ทะเบียนเฝ้าระวังเทียบด้วย HMAC hash, export CSV, สร้างแจ้งเตือน/ตรวจทาน/ยืนยันส่งรายงาน — `amlo.service.ts`
+- [x] PDPA: consent (ให้/ถอน), masking เลขบัตร ปชช. ตาม permission `customer.view_pii`, anonymize workflow (step-up PIN, คงแถวไว้เพื่อ FK ประวัติธุรกรรมแต่ล้าง PII)
+- [x] **Test:** golden test สูตรแปลงเงิน/น้ำหนัก + AMLO threshold (unit), ออมทองปิดบัญชีทุกกรณี (ครบ/ยกเลิก/ผิดนัด) + concurrency ปิดบัญชีซ้ำ, AMLO trigger ตาม threshold ถูกต้อง + KYC บังคับ + watchlist match, งานช่าง state machine + concurrency, CRM dedup/consent/anonymize/loyalty tier (integration), E2E happy path ลูกค้า/ออมทอง/งานช่าง (`tests/e2e/phase6.spec.ts`)
 
 ### Phase 7 — บัญชี การเงิน รายงาน Dashboard (สัปดาห์ 25–28)
 

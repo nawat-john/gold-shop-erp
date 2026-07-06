@@ -12,6 +12,18 @@ const NAV_ITEMS: { href: string; label: string; permission?: string }[] = [
   { href: "/admin/pos", label: "จุดขาย (POS)", permission: "stock.view" },
   { href: "/admin/pos/shifts", label: "กะพนักงาน", permission: "stock.view" },
   { href: "/admin/pawn", label: "ขายฝากทอง", permission: "pawn.view" },
+  { href: "/admin/savings", label: "ออมทอง", permission: "savings.view" },
+  {
+    href: "/admin/work-orders",
+    label: "งานช่าง/ซ่อม",
+    permission: "workorder.view",
+  },
+  {
+    href: "/admin/customers",
+    label: "ลูกค้า (CRM)",
+    permission: "customer.view",
+  },
+  { href: "/admin/amlo", label: "AMLO", permission: "amlo.view" },
   { href: "/admin/users", label: "ผู้ใช้", permission: "user.view" },
   { href: "/admin/roles", label: "บทบาท", permission: "role.manage" },
   { href: "/admin/branches", label: "สาขา", permission: "branch.manage" },

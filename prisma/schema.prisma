@@ -45,6 +45,8 @@ model Branch {
   stockCounts      StockCount[]
   cashDrawers      CashDrawer[]
   pawnContracts    PawnContract[]
+  savingsAccounts  SavingsAccount[]
+  workOrders       WorkOrder[]
 
   @@map("branches")
 }
@@ -301,9 +303,9 @@ model Product {
   createdAt   DateTime        @default(now()) @map("created_at")
   updatedAt   DateTime        @updatedAt @map("updated_at")
 
-  category       ProductCategory @relation(fields: [categoryId], references: [id])
-  inventoryItems InventoryItem[]
-  stockMovements StockMovement[]
+  category           ProductCategory     @relation(fields: [categoryId], references: [id])
+  inventoryItems     InventoryItem[]
+  stockMovements     StockMovement[]
   salesOrderItems    SalesOrderItem[]
   purchaseOrderItems PurchaseOrderItem[]
 
@@ -382,15 +384,15 @@ model InventoryItem {
   createdAt   DateTime          @default(now()) @map("created_at")
   updatedAt   DateTime          @updatedAt @map("updated_at")
 
-  product        Product              @relation(fields: [productId], references: [id])
-  branch         Branch               @relation(fields: [branchId], references: [id])
-  supplier       Supplier?            @relation(fields: [supplierId], references: [id])
-  location       StorageLocation?     @relation(fields: [locationId], references: [id])
-  labels         ProductLabel[]
-  stockMovements StockMovement[]
-  transferItems  BranchTransferItem[]
-  meltLotItems   MeltLotItem[]
-  countItems     StockCountItem[]
+  product            Product              @relation(fields: [productId], references: [id])
+  branch             Branch               @relation(fields: [branchId], references: [id])
+  supplier           Supplier?            @relation(fields: [supplierId], references: [id])
+  location           StorageLocation?     @relation(fields: [locationId], references: [id])
+  labels             ProductLabel[]
+  stockMovements     StockMovement[]
+  transferItems      BranchTransferItem[]
+  meltLotItems       MeltLotItem[]
+  countItems         StockCountItem[]
   salesOrderItems    SalesOrderItem[]
   purchaseOrderItems PurchaseOrderItem[]
 
@@ -605,7 +607,7 @@ enum ShiftStatus {
 model CashDrawer {
   id        String   @id @default(uuid())
   branchId  String   @map("branch_id")
-  code      String   // เช่น "DRAWER-01"
+  code      String // เช่น "DRAWER-01"
   name      String
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
@@ -633,9 +635,9 @@ model Shift {
   reconciledById     String?     @map("reconciled_by_id")
   status             ShiftStatus @default(OPEN)
 
-  drawer          CashDrawer       @relation(fields: [drawerId], references: [id])
-  salesOrders     SalesOrder[]
-  purchaseOrders  PurchaseOrder[]
+  drawer         CashDrawer      @relation(fields: [drawerId], references: [id])
+  salesOrders    SalesOrder[]
+  purchaseOrders PurchaseOrder[]
 
   @@map("shifts")
 }
@@ -647,23 +649,26 @@ enum SalesOrderStatus {
 }
 
 model SalesOrder {
-  id                 String           @id @default(uuid())
-  docNo              String           @unique @map("doc_no") // จาก document_sequences
-  branchId           String           @map("branch_id")
-  shiftId            String           @map("shift_id")
-  priceSnapshot      Json             @map("price_snapshot") // snapshot ราคาทอง
-  totalAmountSatang  BigInt           @map("total_amount_satang")
-  vatAmountSatang    BigInt           @map("vat_amount_satang")
-  status             SalesOrderStatus @default(COMPLETED)
-  idempotencyKey     String?          @unique @map("idempotency_key")
-  voidedAt           DateTime?        @map("voided_at")
-  voidedById         String?          @map("voided_by_id")
-  voidReason         String?          @map("void_reason")
-  createdBy          String           @map("created_by")
-  createdAt          DateTime         @default(now()) @map("created_at")
-  updatedAt          DateTime         @updatedAt @map("updated_at")
+  id                String           @id @default(uuid())
+  docNo             String           @unique @map("doc_no") // จาก document_sequences
+  branchId          String           @map("branch_id")
+  shiftId           String           @map("shift_id")
+  /// ลูกค้าที่ลงทะเบียน CRM (Phase 6) — null = ลูกค้าจร ไม่ผูกโปรไฟล์
+  customerId        String?          @map("customer_id")
+  priceSnapshot     Json             @map("price_snapshot") // snapshot ราคาทอง
+  totalAmountSatang BigInt           @map("total_amount_satang")
+  vatAmountSatang   BigInt           @map("vat_amount_satang")
+  status            SalesOrderStatus @default(COMPLETED)
+  idempotencyKey    String?          @unique @map("idempotency_key")
+  voidedAt          DateTime?        @map("voided_at")
+  voidedById        String?          @map("voided_by_id")
+  voidReason        String?          @map("void_reason")
+  createdBy         String           @map("created_by")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
 
   shift       Shift            @relation(fields: [shiftId], references: [id])
+  customer    Customer?        @relation(fields: [customerId], references: [id])
   items       SalesOrderItem[]
   payments    Payment[]
   tradeIn     TradeIn?
@@ -673,17 +678,17 @@ model SalesOrder {
 }
 
 model SalesOrderItem {
-  id                 String  @id @default(uuid())
-  orderId            String  @map("order_id")
-  productId          String  @map("product_id")
-  itemId             String? @map("item_id") // null สำหรับ COUNTED
-  quantity           Int
-  weightMg           BigInt  @map("weight_mg")
-  goldPurity         Decimal @map("gold_purity") @db.Decimal(5, 2)
-  goldPriceSatang    BigInt  @map("gold_price_satang")
-  laborChargeSatang  BigInt  @map("labor_charge_satang")
-  vatAmountSatang    BigInt  @map("vat_amount_satang")
-  totalAmountSatang  BigInt  @map("total_amount_satang")
+  id                String  @id @default(uuid())
+  orderId           String  @map("order_id")
+  productId         String  @map("product_id")
+  itemId            String? @map("item_id") // null สำหรับ COUNTED
+  quantity          Int
+  weightMg          BigInt  @map("weight_mg")
+  goldPurity        Decimal @map("gold_purity") @db.Decimal(5, 2)
+  goldPriceSatang   BigInt  @map("gold_price_satang")
+  laborChargeSatang BigInt  @map("labor_charge_satang")
+  vatAmountSatang   BigInt  @map("vat_amount_satang")
+  totalAmountSatang BigInt  @map("total_amount_satang")
 
   order   SalesOrder     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product        @relation(fields: [productId], references: [id])
@@ -702,6 +707,8 @@ model PurchaseOrder {
   docNo             String              @unique @map("doc_no")
   branchId          String              @map("branch_id")
   shiftId           String              @map("shift_id")
+  /// ลูกค้าที่ลงทะเบียน CRM (Phase 6) — null = ลูกค้าจร ไม่ผูกโปรไฟล์
+  customerId        String?             @map("customer_id")
   priceSnapshot     Json                @map("price_snapshot")
   totalAmountSatang BigInt              @map("total_amount_satang")
   status            PurchaseOrderStatus @default(COMPLETED)
@@ -716,6 +723,7 @@ model PurchaseOrder {
   createdAt         DateTime            @default(now()) @map("created_at")
 
   shift    Shift               @relation(fields: [shiftId], references: [id])
+  customer Customer?           @relation(fields: [customerId], references: [id])
   items    PurchaseOrderItem[]
   payments Payment[]
   tradeIn  TradeIn?
@@ -724,15 +732,15 @@ model PurchaseOrder {
 }
 
 model PurchaseOrderItem {
-  id                String   @id @default(uuid())
-  orderId           String   @map("order_id")
-  productId         String?  @map("product_id") // null หากเป็นเศษทองชำรุดไม่มี SKU
-  itemId            String?  @map("item_id") // ชิ้นที่สร้างในคลัง (status = IN_STOCK, source = BUYBACK)
-  description       String   // เช่น "สร้อยคอขาด"
-  weightMg          BigInt   @map("weight_mg")
-  goldPurity        Decimal  @map("gold_purity") @db.Decimal(5, 2)
-  unitPriceSatang   BigInt   @map("unit_price_satang")
-  totalAmountSatang BigInt   @map("total_amount_satang")
+  id                String  @id @default(uuid())
+  orderId           String  @map("order_id")
+  productId         String? @map("product_id") // null หากเป็นเศษทองชำรุดไม่มี SKU
+  itemId            String? @map("item_id") // ชิ้นที่สร้างในคลัง (status = IN_STOCK, source = BUYBACK)
+  description       String // เช่น "สร้อยคอขาด"
+  weightMg          BigInt  @map("weight_mg")
+  goldPurity        Decimal @map("gold_purity") @db.Decimal(5, 2)
+  unitPriceSatang   BigInt  @map("unit_price_satang")
+  totalAmountSatang BigInt  @map("total_amount_satang")
 
   order   PurchaseOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product?       @relation(fields: [productId], references: [id])
@@ -742,12 +750,12 @@ model PurchaseOrderItem {
 }
 
 model TradeIn {
-  id                String   @id @default(uuid())
-  docNo             String   @unique @map("doc_no")
-  salesOrderId      String   @unique @map("sales_order_id")
-  purchaseOrderId   String   @unique @map("purchase_order_id")
-  netAmountSatang   BigInt   @map("net_amount_satang") // ยอดสุทธิ (+ ลูกค้าจ่ายเพิ่ม / - ร้านจ่ายคืน)
-  createdAt         DateTime @default(now()) @map("created_at")
+  id              String   @id @default(uuid())
+  docNo           String   @unique @map("doc_no")
+  salesOrderId    String   @unique @map("sales_order_id")
+  purchaseOrderId String   @unique @map("purchase_order_id")
+  netAmountSatang BigInt   @map("net_amount_satang") // ยอดสุทธิ (+ ลูกค้าจ่ายเพิ่ม / - ร้านจ่ายคืน)
+  createdAt       DateTime @default(now()) @map("created_at")
 
   salesOrder    SalesOrder    @relation(fields: [salesOrderId], references: [id])
   purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
@@ -830,8 +838,10 @@ model PawnContract {
   branchId String             @map("branch_id")
   status   PawnContractStatus @default(ACTIVE)
 
-  customerName String  @map("customer_name")
-  customerPhone String? @map("customer_phone")
+  /// ลูกค้าที่ลงทะเบียน CRM (Phase 6) — null = ลูกค้าจร ไม่ผูกโปรไฟล์ (field ด้านล่างยังใช้ได้เป็น fallback)
+  customerId            String? @map("customer_id")
+  customerName          String  @map("customer_name")
+  customerPhone         String? @map("customer_phone")
   /// เลขบัตร ปชช. เข้ารหัส AES-256-GCM (กติกาสถาปัตยกรรมข้อ 9)
   customerCitizenIdEnc  String? @map("customer_citizen_id_enc")
   /// HMAC hash สำหรับค้นหาเลขบัตรที่เข้ารหัสแล้ว
@@ -839,11 +849,11 @@ model PawnContract {
 
   /// รายละเอียดทรัพย์ที่ขายฝาก (ไม่ผูก SKU เพราะเป็นของลูกค้าเอง)
   description       String
-  weightMg          BigInt   @map("weight_mg")
-  goldPurity        Decimal  @map("gold_purity") @db.Decimal(5, 2)
-  photoPath         String?  @map("photo_path")
-  customerPhotoPath String?  @map("customer_photo_path")
-  locationId        String?  @map("location_id")
+  weightMg          BigInt  @map("weight_mg")
+  goldPurity        Decimal @map("gold_purity") @db.Decimal(5, 2)
+  photoPath         String? @map("photo_path")
+  customerPhotoPath String? @map("customer_photo_path")
+  locationId        String? @map("location_id")
 
   /// เงินต้น (สินไถ่เริ่มต้น) — ปรับได้ผ่าน adjustPrincipal
   principalSatang           BigInt  @map("principal_satang")
@@ -870,8 +880,9 @@ model PawnContract {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  branch           Branch                 @relation(fields: [branchId], references: [id])
-  location         StorageLocation?       @relation(fields: [locationId], references: [id])
+  branch           Branch                @relation(fields: [branchId], references: [id])
+  customer         Customer?             @relation(fields: [customerId], references: [id])
+  location         StorageLocation?      @relation(fields: [locationId], references: [id])
   events           PawnEvent[]
   interestPayments PawnInterestPayment[]
 
@@ -918,4 +929,257 @@ model PawnInterestPayment {
 
   @@index([contractId, paidAt])
   @@map("pawn_interest_payments")
+}
+
+// ───────────────────────── Phase 6: Savings, Work Orders, CRM, AMLO ─────────────────────────
+// กติกาสำคัญ:
+// - Customer เป็นจุดศูนย์กลาง CRM — SalesOrder/PurchaseOrder/PawnContract/SavingsAccount/WorkOrder
+//   ผูก customerId แบบ optional (ลูกค้าจรยังทำธุรกรรมได้โดยไม่ต้องลงทะเบียน)
+// - savings_transactions และ work_order_events เป็น ledger แบบ append-only เหมือน pawn_events
+// - AMLO: เกินเพดานเงินสด (settings) ต้องมี customerId + citizenId ก่อนทำรายการสำเร็จ (บังคับ KYC)
+
+enum CustomerTier {
+  BRONZE
+  SILVER
+  GOLD
+}
+
+/// โปรไฟล์ลูกค้า CRM — ศูนย์กลางประวัติธุรกรรมทุกโมดูล
+model Customer {
+  id   String @id @default(uuid())
+  /// รหัสลูกค้า จาก document_sequences เช่น "CUS-000001"
+  code String @unique
+
+  name    String
+  phone   String?
+  address String?
+  note    String?
+
+  /// เลขบัตร ปชช. เข้ารหัส AES-256-GCM (KYC/AMLO) — ล้างค่าเมื่อ anonymize (PDPA)
+  citizenIdEnc  String? @map("citizen_id_enc")
+  /// HMAC hash — ใช้ค้นหา/กันลงทะเบียนซ้ำ และเทียบกับ AMLO watchlist
+  citizenIdHash String? @unique @map("citizen_id_hash")
+
+  loyaltyPoints Int          @default(0) @map("loyalty_points")
+  tier          CustomerTier @default(BRONZE)
+
+  /// PDPA: ยินยอมเก็บ/ใช้ข้อมูลส่วนบุคคล
+  consentGivenAt     DateTime? @map("consent_given_at")
+  consentWithdrawnAt DateTime? @map("consent_withdrawn_at")
+  /// ไม่ null แปลว่าโปรไฟล์นี้ถูกล้างข้อมูลส่วนตัวแล้ว (สิทธิ์ถูกลืม) — แถวยังอยู่เพื่อคง FK ประวัติธุรกรรม
+  anonymizedAt       DateTime? @map("anonymized_at")
+
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  salesOrders     SalesOrder[]
+  purchaseOrders  PurchaseOrder[]
+  pawnContracts   PawnContract[]
+  savingsAccounts SavingsAccount[]
+  workOrders      WorkOrder[]
+  amloAlerts      AmloAlert[]
+
+  @@map("customers")
+}
+
+enum AmloAlertStatus {
+  PENDING
+  REVIEWED
+  REPORTED
+}
+
+/// อ้างอิงประเภทเอกสารที่ทริกเกอร์ AMLO
+enum AmloRefType {
+  SALES_ORDER
+  PURCHASE_ORDER
+  PAWN_CONTRACT
+}
+
+/// แจ้งเตือนธุรกรรมเข้าเกณฑ์ AMLO (เงินสดเกินเพดาน) — สร้างอัตโนมัติ ต้องมีเจ้าหน้าที่ตรวจทาน/รายงาน
+model AmloAlert {
+  id             String          @id @default(uuid())
+  customerId     String?         @map("customer_id")
+  refType        AmloRefType     @map("ref_type")
+  refId          String          @map("ref_id")
+  amountSatang   BigInt          @map("amount_satang")
+  /// ตรงกับ AMLO watchlist ตอนตรวจสอบหรือไม่
+  watchlistMatch Boolean         @default(false) @map("watchlist_match")
+  status         AmloAlertStatus @default(PENDING)
+  reviewedById   String?         @map("reviewed_by_id")
+  reviewedAt     DateTime?       @map("reviewed_at")
+  reportedAt     DateTime?       @map("reported_at")
+  note           String?
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  customer Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([status])
+  @@index([refType, refId])
+  @@map("amlo_alerts")
+}
+
+/// ทะเบียนรายชื่อเฝ้าระวัง AMLO — เทียบด้วย HMAC hash ของเลขบัตร ปชช. เท่านั้น
+model AmloWatchlistEntry {
+  id            String   @id @default(uuid())
+  citizenIdHash String   @unique @map("citizen_id_hash")
+  name          String
+  reason        String
+  addedBy       String   @map("added_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("amlo_watchlist_entries")
+}
+
+enum SavingsAccountType {
+  /// ออมเงิน — ฝากเป็นเงินสด แปลงเป็นน้ำหนักทองตอนปิดบัญชีด้วยราคา ณ วันปิด
+  CASH_SAVINGS
+  /// ออมน้ำหนัก — แปลงเป็นน้ำหนักทองทันทีทุกครั้งที่ฝากด้วยราคา ณ วันฝาก
+  WEIGHT_SAVINGS
+}
+
+enum SavingsAccountStatus {
+  ACTIVE
+  /// ปิดบัญชีรับทอง (ครบเป้า/ลูกค้าขอรับทอง)
+  CLOSED_GOLD
+  /// ปิดบัญชีรับเงินคืน (ยกเลิกกลางคัน)
+  CLOSED_CASH
+  /// ปิดบัญชีเพราะลูกค้าผิดนัดไม่ฝากตามกำหนดต่อเนื่อง
+  CLOSED_DEFAULTED
+}
+
+enum SavingsTxType {
+  OPEN
+  DEPOSIT
+  CLOSE_GOLD
+  CLOSE_CASH
+  CLOSE_DEFAULTED
+}
+
+model SavingsAccount {
+  id          String               @id @default(uuid())
+  /// เลขที่บัญชี จาก document_sequences เช่น "SAV-BKK01-2569-000001"
+  docNo       String               @unique @map("doc_no")
+  branchId    String               @map("branch_id")
+  customerId  String?              @map("customer_id")
+  accountType SavingsAccountType   @map("account_type")
+  status      SavingsAccountStatus @default(ACTIVE)
+
+  /// ยอดสะสมเงินสด สตางค์ (เฉพาะ CASH_SAVINGS)
+  balanceSatang   BigInt  @default(0) @map("balance_satang")
+  /// ยอดสะสมน้ำหนักทอง มก. (เฉพาะ WEIGHT_SAVINGS)
+  balanceWeightMg BigInt  @default(0) @map("balance_weight_mg")
+  /// เป้าหมายน้ำหนักทอง มก. (ถ้ามีกำหนดเป้า)
+  targetWeightMg  BigInt? @map("target_weight_mg")
+
+  openedAt   DateTime  @default(now()) @map("opened_at")
+  closedAt   DateTime? @map("closed_at")
+  closedById String?   @map("closed_by_id")
+
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  branch       Branch               @relation(fields: [branchId], references: [id])
+  customer     Customer?            @relation(fields: [customerId], references: [id])
+  transactions SavingsTransaction[]
+
+  @@index([branchId, status])
+  @@map("savings_accounts")
+}
+
+/// Ledger ธุรกรรมออมทอง — append-only (DB trigger กัน UPDATE/DELETE/TRUNCATE)
+model SavingsTransaction {
+  id            BigInt        @id @default(autoincrement())
+  accountId     String        @map("account_id")
+  txType        SavingsTxType @map("tx_type")
+  amountSatang  BigInt?       @map("amount_satang")
+  weightMg      BigInt?       @map("weight_mg")
+  /// snapshot ราคาตอนทำรายการ (format เดียวกับ price-snapshot.service) — ใช้แปลงเงิน<->น้ำหนัก
+  priceSnapshot Json?         @map("price_snapshot")
+  actorId       String        @map("actor_id")
+  requestId     String?       @map("request_id")
+  note          String?
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  account SavingsAccount @relation(fields: [accountId], references: [id])
+
+  @@index([accountId, createdAt])
+  @@map("savings_transactions")
+}
+
+enum WorkOrderType {
+  /// สั่งทำ — เบิกทองช่างไปขึ้นรูป
+  CUSTOM_ORDER
+  /// ซ่อม — รับของลูกค้ามาซ่อม
+  REPAIR
+}
+
+enum WorkOrderStatus {
+  RECEIVED
+  IN_PROGRESS
+  COMPLETED
+  DELIVERED
+  CANCELLED
+}
+
+enum WorkOrderEventType {
+  RECEIVE
+  GOLD_ISSUE
+  STATUS_CHANGE
+  COMPLETE
+  DELIVER
+  CANCEL
+}
+
+model WorkOrder {
+  id          String          @id @default(uuid())
+  docNo       String          @unique @map("doc_no")
+  branchId    String          @map("branch_id")
+  customerId  String?         @map("customer_id")
+  type        WorkOrderType
+  status      WorkOrderStatus @default(RECEIVED)
+  description String
+
+  /// เงินมัดจำ สตางค์
+  depositSatang    BigInt @default(0) @map("deposit_satang")
+  /// เบิกทองช่าง มก. (เฉพาะ CUSTOM_ORDER)
+  goldIssuedMg     BigInt @default(0) @map("gold_issued_mg")
+  /// ค่าเผื่อเศษทองที่ยอมรับได้ มก.
+  toleranceMg      BigInt @default(0) @map("tolerance_mg")
+  /// ค่าบริการซ่อม สตางค์ (เฉพาะ REPAIR)
+  serviceFeeSatang BigInt @default(0) @map("service_fee_satang")
+
+  receivedAt  DateTime  @default(now()) @map("received_at")
+  promisedAt  DateTime? @map("promised_at")
+  completedAt DateTime? @map("completed_at")
+  deliveredAt DateTime? @map("delivered_at")
+  cancelledAt DateTime? @map("cancelled_at")
+
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  branch   Branch           @relation(fields: [branchId], references: [id])
+  customer Customer?        @relation(fields: [customerId], references: [id])
+  events   WorkOrderEvent[]
+
+  @@index([branchId, status])
+  @@map("work_orders")
+}
+
+/// Ledger เหตุการณ์งานช่าง — append-only (DB trigger กัน UPDATE/DELETE/TRUNCATE)
+model WorkOrderEvent {
+  id          BigInt             @id @default(autoincrement())
+  workOrderId String             @map("work_order_id")
+  eventType   WorkOrderEventType @map("event_type")
+  note        String?
+  actorId     String             @map("actor_id")
+  requestId   String?            @map("request_id")
+  createdAt   DateTime           @default(now()) @map("created_at")
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id])
+
+  @@index([workOrderId, createdAt])
+  @@map("work_order_events")
 }

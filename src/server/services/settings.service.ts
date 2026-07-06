@@ -14,6 +14,14 @@ export const SETTING_KEYS = {
   pawnForfeitGraceDays: "pawn.forfeit_grace_days",
   /** วงเงินขายฝากแนะนำ = % ของราคาตลาดรับซื้อคืน (default 80) */
   pawnLoanToValuePercent: "pawn.loan_to_value_percent",
+  /** เพดานธุรกรรมเงินสด (สตางค์) ที่ต้องบังคับ KYC + สร้าง AMLO alert (default 2,000,000 บาท) */
+  amloCashThresholdSatang: "amlo.cash_threshold_satang",
+  /** กี่บาทที่ใช้จ่าย = 1 แต้มสะสม (default 1000 บาท/แต้ม) */
+  loyaltyBahtPerPoint: "loyalty.baht_per_point",
+  /** แต้มสะสมขั้นต่ำสำหรับระดับ SILVER (default 1,000 แต้ม) */
+  loyaltyTierSilverPoints: "loyalty.tier_silver_points",
+  /** แต้มสะสมขั้นต่ำสำหรับระดับ GOLD (default 5,000 แต้ม) */
+  loyaltyTierGoldPoints: "loyalty.tier_gold_points",
 } as const;
 
 export async function getNumberSetting(

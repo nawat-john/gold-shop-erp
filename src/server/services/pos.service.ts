@@ -11,6 +11,7 @@ import {
   StockMovementType,
   ProductTracking,
   AcquisitionSource,
+  AmloRefType,
   type Prisma,
 } from "@/generated/prisma/client";
 import { calculateSalePrice } from "./pricing.service";
@@ -22,6 +23,11 @@ import {
 } from "./document-number.service";
 import { requireApproval } from "./approval.service";
 import { writeAuditLog } from "./audit.service";
+import { findOrCreateCustomerFromInline } from "./customer.service";
+import {
+  evaluateAmloTrigger,
+  isTransactionAboveAmloThreshold,
+} from "./amlo.service";
 
 interface SalesItemParam {
   productId: string;
@@ -298,6 +304,8 @@ interface PurchaseItemParam {
 interface CreatePurchaseOrderParams {
   branchId: string;
   shiftId: string;
+  /** ลูกค้าที่ลงทะเบียน CRM ไว้ล่วงหน้า — ถ้าไม่ระบุแต่มี customerCitizenId และเข้าเกณฑ์ AMLO จะลงทะเบียนอัตโนมัติ */
+  customerId?: string | null;
   customerName?: string | null;
   customerPhone?: string | null;
   customerCitizenId?: string | null;
@@ -317,6 +325,7 @@ export async function createPurchaseOrder(
   {
     branchId,
     shiftId,
+    customerId: customerIdParam,
     customerName,
     customerPhone,
     customerCitizenId,
@@ -328,6 +337,7 @@ export async function createPurchaseOrder(
   }: CreatePurchaseOrderParams,
 ) {
   return await db.$transaction(async (tx) => {
+    let customerId = customerIdParam;
     if (idempotencyKey) {
       const existing = await tx.purchaseOrder.findUnique({
         where: { idempotencyKey },
@@ -412,6 +422,22 @@ export async function createPurchaseOrder(
       );
     }
 
+    // เกินเพดาน AMLO และยังไม่มีลูกค้าลงทะเบียน CRM ล่วงหน้า -> ลงทะเบียนอัตโนมัติจากข้อมูล inline (บังคับ KYC)
+    if (
+      !customerId &&
+      customerCitizenId &&
+      customerName &&
+      (await isTransactionAboveAmloThreshold(tx, totalAmountSatang))
+    ) {
+      const customer = await findOrCreateCustomerFromInline(tx, {
+        name: customerName,
+        phone: customerPhone,
+        citizenId: customerCitizenId,
+        actorId,
+      });
+      customerId = customer.id;
+    }
+
     // รันเลขที่เอกสารบิลรับซื้อ (BUY-branchCode-yearBE-sequence)
     const branch = await tx.branch.findUniqueOrThrow({
       where: { id: branchId },
@@ -426,16 +452,26 @@ export async function createPurchaseOrder(
         docNo,
         branchId,
         shiftId,
+        customerId: customerId ?? null,
         priceSnapshot: priceSnapshot as unknown as Prisma.InputJsonValue,
         totalAmountSatang,
         customerName,
         customerPhone,
-        customerCitizenId, // ปัจจุบันเป็น String เปล่าหรือเข้ารหัส
+        customerCitizenId, // ปัจจุบันเป็น String เปล่าหรือเข้ารหัส — ดู customerId ด้านบนสำหรับ KYC ที่เข้ารหัสจริง
         status: PurchaseOrderStatus.COMPLETED,
         idempotencyKey,
         createdBy: actorId,
         createdAt: now,
       },
+    });
+
+    await evaluateAmloTrigger(tx, {
+      customerId,
+      amountSatang: totalAmountSatang,
+      refType: AmloRefType.PURCHASE_ORDER,
+      refId: order.id,
+      actorId,
+      requestId,
     });
 
     await tx.purchaseOrderItem.createMany({
