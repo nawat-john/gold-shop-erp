@@ -44,6 +44,7 @@ model Branch {
   meltLots         MeltLot[]
   stockCounts      StockCount[]
   cashDrawers      CashDrawer[]
+  pawnContracts    PawnContract[]
 
   @@map("branches")
 }
@@ -330,6 +331,7 @@ model StorageLocation {
 
   branch         Branch          @relation(fields: [branchId], references: [id])
   inventoryItems InventoryItem[]
+  pawnContracts  PawnContract[]
 
   @@unique([branchId, code])
   @@map("storage_locations")
@@ -793,4 +795,127 @@ model TaxInvoice {
   salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id])
 
   @@map("tax_invoices")
+}
+
+// ───────────────────────── Phase 5: Pawn (ขายฝากทอง) ─────────────────────────
+// กติกาสำคัญ:
+// - สัญญาไม่สร้าง inventory_items ระหว่างสถานะ ACTIVE (ทองยังเป็นของลูกค้า ไม่ใช่สต๊อกร้าน)
+//   ทรัพย์ค้ำประกันเก็บรายละเอียดไว้ในตัว pawn_contracts เอง + location อ้าง storage_locations
+// - เมื่อทองหลุด (FORFEITED) เท่านั้นที่สร้าง inventory_items จริง (source=PAWN_FORFEIT,
+//   costSatang=เงินต้นค้าง) พร้อม stock_movements (PAWN_FORFEIT_IN) — reuse enum ที่ประกาศไว้ตั้งแต่ Phase 3
+// - pawn_events เป็น ledger แบบ append-only (เหมือน stock_movements/audit_logs) บันทึกทุก transition
+// - pawn_interest_payments แยกจาก pawn_events เพื่อให้ Phase 7 (บัญชี) query รายได้ดอกเบี้ยได้ตรงๆ
+
+enum PawnContractStatus {
+  ACTIVE
+  REDEEMED
+  FORFEITED
+  CANCELLED
+}
+
+enum PawnEventType {
+  OPEN
+  RENEW_INTEREST
+  REDEEM
+  FORFEIT
+  PRINCIPAL_INCREASE
+  PRINCIPAL_DECREASE
+  CANCEL
+}
+
+model PawnContract {
+  id       String             @id @default(uuid())
+  /// เลขที่สัญญา จาก document_sequences เช่น "PWN-BKK01-2569-000001"
+  docNo    String             @unique @map("doc_no")
+  branchId String             @map("branch_id")
+  status   PawnContractStatus @default(ACTIVE)
+
+  customerName String  @map("customer_name")
+  customerPhone String? @map("customer_phone")
+  /// เลขบัตร ปชช. เข้ารหัส AES-256-GCM (กติกาสถาปัตยกรรมข้อ 9)
+  customerCitizenIdEnc  String? @map("customer_citizen_id_enc")
+  /// HMAC hash สำหรับค้นหาเลขบัตรที่เข้ารหัสแล้ว
+  customerCitizenIdHash String? @map("customer_citizen_id_hash")
+
+  /// รายละเอียดทรัพย์ที่ขายฝาก (ไม่ผูก SKU เพราะเป็นของลูกค้าเอง)
+  description       String
+  weightMg          BigInt   @map("weight_mg")
+  goldPurity        Decimal  @map("gold_purity") @db.Decimal(5, 2)
+  photoPath         String?  @map("photo_path")
+  customerPhotoPath String?  @map("customer_photo_path")
+  locationId        String?  @map("location_id")
+
+  /// เงินต้น (สินไถ่เริ่มต้น) — ปรับได้ผ่าน adjustPrincipal
+  principalSatang           BigInt  @map("principal_satang")
+  /// อัตราดอกเบี้ยตกลง %/ปี — ต้องไม่เกินเพดานกฎหมาย (settings)
+  annualInterestRatePercent Decimal @map("annual_interest_rate_percent") @db.Decimal(5, 2)
+  /// ระยะเวลาไถ่ถอนตามสัญญา (เดือน) — ใช้คำนวณ due date เริ่มต้น/ต่อดอก
+  termMonths                Int     @map("term_months")
+
+  startDate               DateTime @default(now()) @map("start_date")
+  /// วันครบกำหนดไถ่ถอนปัจจุบัน — เลื่อนออกไปทุกครั้งที่ต่อดอก
+  dueDate                 DateTime @map("due_date")
+  /// ดอกเบี้ยชำระแล้วถึงวันที่นี้ — คำนวณดอกเบี้ยค้างครั้งถัดไปเริ่มนับจากวันนี้
+  interestPaidThroughDate DateTime @map("interest_paid_through_date")
+
+  redeemedAt    DateTime? @map("redeemed_at")
+  redeemedById  String?   @map("redeemed_by_id")
+  forfeitedAt   DateTime? @map("forfeited_at")
+  forfeitedById String?   @map("forfeited_by_id")
+  cancelledAt   DateTime? @map("cancelled_at")
+  cancelledById String?   @map("cancelled_by_id")
+  cancelReason  String?   @map("cancel_reason")
+
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  branch           Branch                 @relation(fields: [branchId], references: [id])
+  location         StorageLocation?       @relation(fields: [locationId], references: [id])
+  events           PawnEvent[]
+  interestPayments PawnInterestPayment[]
+
+  @@index([branchId, status])
+  @@index([status, dueDate])
+  @@map("pawn_contracts")
+}
+
+/// Ledger เหตุการณ์สัญญาขายฝาก — append-only (DB trigger กัน UPDATE/DELETE/TRUNCATE)
+model PawnEvent {
+  id                    BigInt        @id @default(autoincrement())
+  contractId            String        @map("contract_id")
+  eventType             PawnEventType @map("event_type")
+  principalBeforeSatang BigInt        @map("principal_before_satang")
+  principalAfterSatang  BigInt        @map("principal_after_satang")
+  /// ดอกเบี้ยที่ชำระ/คำนวณในเหตุการณ์นี้ (RENEW_INTEREST, REDEEM)
+  interestAmountSatang  BigInt?       @map("interest_amount_satang")
+  periodFrom            DateTime?     @map("period_from")
+  periodTo              DateTime?     @map("period_to")
+  actorId               String        @map("actor_id")
+  requestId             String?       @map("request_id")
+  note                  String?
+  createdAt             DateTime      @default(now()) @map("created_at")
+
+  contract PawnContract @relation(fields: [contractId], references: [id])
+
+  @@index([contractId, createdAt])
+  @@map("pawn_events")
+}
+
+/// ประวัติรับชำระดอกเบี้ย — แยกจาก pawn_events เพื่อให้บัญชี (Phase 7) query รายได้ดอกเบี้ยตรงๆ
+model PawnInterestPayment {
+  id                   String   @id @default(uuid())
+  contractId           String   @map("contract_id")
+  periodFrom           DateTime @map("period_from")
+  periodTo             DateTime @map("period_to")
+  interestAmountSatang BigInt   @map("interest_amount_satang")
+  principalAfterSatang BigInt   @map("principal_after_satang")
+  paidAt               DateTime @default(now()) @map("paid_at")
+  actorId              String   @map("actor_id")
+  requestId            String?  @map("request_id")
+
+  contract PawnContract @relation(fields: [contractId], references: [id])
+
+  @@index([contractId, paidAt])
+  @@map("pawn_interest_payments")
 }

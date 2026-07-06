@@ -11,6 +11,7 @@ const NAV_ITEMS: { href: string; label: string; permission?: string }[] = [
   { href: "/admin/inventory", label: "คลังสินค้า", permission: "stock.view" },
   { href: "/admin/pos", label: "จุดขาย (POS)", permission: "stock.view" },
   { href: "/admin/pos/shifts", label: "กะพนักงาน", permission: "stock.view" },
+  { href: "/admin/pawn", label: "ขายฝากทอง", permission: "pawn.view" },
   { href: "/admin/users", label: "ผู้ใช้", permission: "user.view" },
   { href: "/admin/roles", label: "บทบาท", permission: "role.manage" },
   { href: "/admin/branches", label: "สาขา", permission: "branch.manage" },

@@ -24,6 +24,15 @@ export const PERMISSIONS = {
   "stock.count": "สร้างและตรวจนับสต๊อกสินค้า",
   "stock.adjust": "ปรับปรุงยอดสต๊อกสินค้า (ต้องการ PIN ผู้อนุมัติ)",
   "stock.melt": "จัดการส่งทองเก่าหลอม/คืนโรงงาน",
+
+  // Phase 5 — Pawn (ขายฝาก)
+  "pawn.view": "ดูสัญญาขายฝากและทะเบียนคุมทรัพย์",
+  "pawn.open": "เปิดสัญญาขายฝากใหม่",
+  "pawn.renew": "รับชำระดอกเบี้ย/ต่อสัญญาขายฝาก",
+  "pawn.redeem": "รับไถ่ถอนทองคืนลูกค้า",
+  "pawn.adjust_principal": "เพิ่ม/ลดเงินต้นสัญญาขายฝาก",
+  "pawn.forfeit": "อนุมัติทองหลุด โอนเข้าสต๊อก (ต้องการ PIN ผู้อนุมัติ)",
+  "pawn.cancel": "ยกเลิกสัญญาขายฝาก (ต้องการ PIN ผู้อนุมัติ)",
 } as const;
 
 export type PermissionCode = keyof typeof PERMISSIONS;
@@ -69,12 +78,27 @@ export const SYSTEM_ROLES: Record<
       "stock.count",
       "stock.adjust",
       "stock.melt",
+      "pawn.view",
+      "pawn.open",
+      "pawn.renew",
+      "pawn.redeem",
+      "pawn.adjust_principal",
+      "pawn.forfeit",
+      "pawn.cancel",
     ],
   },
   CASHIER: {
     name: "พนักงานขาย",
     description: "ซื้อ-ขายหน้าร้าน (สิทธิ์ POS มาใน Phase 4)",
-    permissions: ["price.view", "stock.view", "stock.count"],
+    permissions: [
+      "price.view",
+      "stock.view",
+      "stock.count",
+      "pawn.view",
+      "pawn.open",
+      "pawn.renew",
+      "pawn.redeem",
+    ],
   },
   STOCK_KEEPER: {
     name: "พนักงานสต๊อก",
@@ -86,11 +110,12 @@ export const SYSTEM_ROLES: Record<
       "stock.transfer",
       "stock.count",
       "stock.melt",
+      "pawn.view",
     ],
   },
   ACCOUNTANT: {
     name: "ฝ่ายบัญชี",
     description: "บัญชีและภาษี (สิทธิ์มาใน Phase 7)",
-    permissions: ["audit.view", "price.view"],
+    permissions: ["audit.view", "price.view", "pawn.view"],
   },
 };

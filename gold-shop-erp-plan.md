@@ -395,14 +395,14 @@
 
 ### Phase 5 — ขายฝาก (Pawn) (สัปดาห์ 17–20) ★ ตัวสร้างรายได้หลักของหลายร้าน
 
-- [ ] Schema: pawn_contracts, pawn_events, pawn_interest_payments, collateral location tracking
-- [ ] Interest engine: ดอกเบี้ยรายเดือน/เศษวัน, เพดานตามกฎหมาย, สูตร configurable — pure function + ตารางเทสต์เคสละเอียด
-- [ ] เปิดสัญญา: ประเมินวงเงิน (% ของ market), ถ่ายรูปทรัพย์+ลูกค้า, พิมพ์สัญญา 2 ฉบับ
-- [ ] ต่อดอก / ไถ่ถอน / เพิ่ม-ลดเงินต้น (ทุก event append ลง pawn_events)
-- [ ] ทองหลุด: ผ่อนผัน → อนุมัติ (step-up) → โอนเข้าสต๊อกพร้อมต้นทุน
-- [ ] แจ้งเตือนครบกำหนด + รายการโทรตาม + export
-- [ ] ทะเบียนคุมทรัพย์ + ตรวจนับทรัพย์ขายฝาก
-- [ ] **Test:** คำนวณดอกเบี้ยทุก edge case (ต่อดอกกลางงวด, ไถ่ก่อนกำหนด, ข้ามปี), สถานะสัญญาเป็น state machine ที่ transition ผิดไม่ได้
+- [x] Schema: pawn_contracts, pawn_events, pawn_interest_payments (ledger append-only ด้วย Postgres trigger เหมือน stock_movements) — collateral location tracking ผ่าน FK ไป storage_locations ที่มีอยู่แล้ว (ไม่สร้างตารางใหม่)
+- [x] Interest engine: ดอกเบี้ย simple interest เศษวันจริง (Actual/365), เพดานตามกฎหมาย configurable ผ่าน settings (default 15%/ปี อิง ป.พ.พ. ม.654/499) — pure function `src/server/domain/pawn-interest.ts` + 9 golden test cases (เต็มงวด/กลางงวด/ก่อนกำหนด/ข้ามปี/เพดานเกิน)
+- [x] เปิดสัญญา: แนะนำวงเงินจาก % ของราคาตลาด (LTV configurable, default 80%) แสดงบนฟอร์ม — ถ่ายรูปทรัพย์/ลูกค้าและพิมพ์สัญญากระดาษยังเป็น field เตรียมไว้เท่านั้น (ไม่มี UI ถ่าย/พิมพ์จริง เหมือนสถานะพิมพ์ใบเสร็จใน Phase 4 ที่ยังไม่มี UI จริงเช่นกัน — เป็น backlog ร่วมกัน)
+- [x] ต่อดอก / ไถ่ถอน / เพิ่ม-ลดเงินต้น (ทุก event append ลง pawn_events; ปรับเงินต้นเคลียร์ดอกเบี้ยค้างก่อนเสมอกันตกหล่น)
+- [x] ทองหลุด: ผ่อนผัน (configurable, default 7 วัน) → อนุมัติ (step-up PIN, maker-checker) → โอนเข้าสต๊อกพร้อมต้นทุน (คืนทุนเงินต้นค้าง, reuse enum `PAWN_FORFEIT`/`PAWN_FORFEIT_IN` ที่ประกาศไว้ตั้งแต่ Phase 3)
+- [x] แจ้งเตือนครบกำหนด + รายการโทรตาม (`/admin/pawn/due`) — ยังไม่มี export CSV (รอรวมกับงาน export CSV/Excel รวมของ Phase 7)
+- [x] ทะเบียนคุมทรัพย์ (`/admin/pawn` แสดงทุกสัญญา ACTIVE พร้อมตำแหน่งจัดเก็บ) — ยังไม่มีขั้นตอนตรวจนับแบบมี step-up approval เหมือน stock count เต็มรูปแบบ (เป็น read-only register ในเฟสนี้)
+- [x] **Test:** unit เศรษฐศาสตร์ดอกเบี้ยครบ edge case, integration state machine (`tests/integration/pawn-flow.test.ts`: เปิด→ต่อดอก→ไถ่ถอน, เปิด→หลุด→เข้าสต๊อกจริง, transition ผิดสถานะถูกกัน, ปรับเงินต้น, ยกเลิก, concurrency อนุมัติทองหลุดซ้ำสำเร็จครั้งเดียว), E2E happy path (`tests/e2e/pawn.spec.ts`)
 
 ### Phase 6 — ออมทอง + งานช่าง + CRM/AMLO (สัปดาห์ 21–24)
 
