@@ -74,118 +74,118 @@
 
 ### โมดูล A — ราคาทอง (Gold Price Engine)
 
-- [ ] ดึงราคาสมาคมค้าทองคำอัตโนมัติ (scheduled fetch) + fallback กรอกมือ
-- [ ] เก็บประวัติราคาทุกประกาศ (timestamp, รอบประกาศ, buy/sell, แท่ง/รูปพรรณ)
-- [ ] ประกาศราคาหน้าร้านเอง (ราคาร้านอาจต่างจากสมาคม) พร้อมผู้อนุมัติ
-- [ ] Price board แสดงหน้าจอทีวีหน้าร้าน (route แยก, auto-refresh)
-- [ ] Snapshot ราคาลงทุกบิล ณ เวลาทำรายการ
-- [ ] กราฟราคาย้อนหลัง + แจ้งเตือนเมื่อราคาเปลี่ยนเกิน threshold
+- [x] ดึงราคาสมาคมค้าทองคำอัตโนมัติ (scheduled fetch) + fallback กรอกมือ
+- [x] เก็บประวัติราคาทุกประกาศ (timestamp, รอบประกาศ, buy/sell, แท่ง/รูปพรรณ)
+- [x] ประกาศราคาหน้าร้านเอง (ราคาร้านอาจต่างจากสมาคม) พร้อมผู้อนุมัติ
+- [x] Price board แสดงหน้าจอทีวีหน้าร้าน (route แยก, auto-refresh)
+- [x] Snapshot ราคาลงทุกบิล ณ เวลาทำรายการ
+- [x] กราฟราคาย้อนหลัง + แจ้งเตือนเมื่อราคาเปลี่ยนเกิน threshold
 
 ### โมดูล B — POS ซื้อ-ขายหน้าร้าน
 
-- [ ] เปิดบิลขายทองใหม่: สแกนบาร์โค้ด/QR ที่ป้ายทอง → ดึงน้ำหนัก, ค่ากำเหน็จ, คำนวณราคาอัตโนมัติ
-- [ ] รับซื้อทองเก่า: กรอกน้ำหนักชั่งจริง, % ทอง, เลือกเรต (ทองร้าน/ทองนอก), ถ่ายรูปสินค้า
-- [ ] เปลี่ยนทอง (trade-in) ในบิลเดียว คำนวณส่วนต่างอัตโนมัติ
-- [ ] ส่วนลด/ต่อรองราคา แบบมี limit ตาม role + ต้องใส่เหตุผล (ทุก override มี log)
-- [ ] รับชำระหลายช่องทางในบิลเดียว: เงินสด, โอน (แนบสลิป/สแกน QR), บัตรเครดิต (+ ค่าธรรมเนียม)
-- [ ] พิมพ์: ใบเสร็จ/ใบกำกับภาษีอย่างย่อ-เต็มรูป, ใบรับประกันสินค้า (มีเลขที่กำกับ)
-- [ ] ระบบกะ (Shift): เปิดกะ-ปิดกะ, นับเงินสดในลิ้นชัก, กระทบยอดเงิน/ทองสิ้นวัน
-- [ ] Void/คืนสินค้า ต้องมีผู้อนุมัติระดับผู้จัดการ + เหตุผล
-- [ ] Hold บิล / เรียกบิลค้าง
-- [ ] โหมดหน้าจอสัมผัส ใช้งานเร็ว keyboard-first สำหรับพนักงาน
+- [x] เปิดบิลขายทองใหม่: สแกนบาร์โค้ด/QR ที่ป้ายทอง → ดึงน้ำหนัก, ค่ากำเหน็จ, คำนวณราคาอัตโนมัติ
+- [x] รับซื้อทองเก่า: กรอกน้ำหนักชั่งจริง, % ทอง, เลือกเรต (ทองร้าน/ทองนอก), ถ่ายรูปสินค้า
+- [x] เปลี่ยนทอง (trade-in) ในบิลเดียว คำนวณส่วนต่างอัตโนมัติ
+- [x] ส่วนลด/ต่อรองราคา แบบมี limit ตาม role + ต้องใส่เหตุผล (ทุก override มี log)
+- [x] รับชำระหลายช่องทางในบิลเดียว: เงินสด, โอน (แนบสลิป/สแกน QR), บัตรเครดิต (+ ค่าธรรมเนียม)
+- [x] พิมพ์: ใบเสร็จ/ใบกำกับภาษีอย่างย่อ-เต็มรูป, ใบรับประกันสินค้า (มีเลขที่กำกับ)
+- [x] ระบบกะ (Shift): เปิดกะ-ปิดกะ, นับเงินสดในลิ้นชัก, กระทบยอดเงิน/ทองสิ้นวัน
+- [x] Void/คืนสินค้า ต้องมีผู้อนุมัติระดับผู้จัดการ + เหตุผล
+- [x] Hold บิล / เรียกบิลค้าง
+- [x] โหมดหน้าจอสัมผัส ใช้งานเร็ว keyboard-first สำหรับพนักงาน
 
 ### โมดูล C — ขายฝาก / จำนำ (Pawn Module)
 
-- [ ] เปิดสัญญาขายฝาก: ถ่ายรูปทอง + ลูกค้า, ชั่งน้ำหนัก, ประเมินราคา (แนะนำวงเงินจาก % ของราคาตลาด), กำหนดดอกเบี้ย/ระยะเวลา
-- [ ] พิมพ์สัญญาขายฝากตามแบบกฎหมาย + สำเนา
-- [ ] ต่อดอก (interest renewal): คำนวณดอกเบี้ยค้าง, ออกใบเสร็จ, ขยายกำหนด
-- [ ] ไถ่ถอน: คำนวณสินไถ่ (เงินต้น + ดอกเบี้ยตามจริง), คืนทอง, ปิดสัญญา
-- [ ] เพิ่ม/ลดเงินต้น (ตีราคาใหม่)
-- [ ] แจ้งเตือนสัญญาใกล้ครบกำหนด (in-app + export รายชื่อโทรตาม/SMS ภายหลัง)
-- [ ] จัดการทองหลุดจำนำ: ครบกำหนด + ผ่อนผัน → อนุมัติหลุด → โอนเข้าสต๊อก (เป็นทองเก่า) พร้อมต้นทุน = เงินต้นค้าง
-- [ ] ทะเบียนคุมทรัพย์ขายฝาก: ตำแหน่งเก็บ (ตู้เซฟ/ช่อง), สถานะ, ตรวจนับ
-- [ ] Ledger ดอกเบี้ยรับ แยกตามสัญญา/งวด สำหรับบัญชี
+- [x] เปิดสัญญาขายฝาก: ถ่ายรูปทอง + ลูกค้า, ชั่งน้ำหนัก, ประเมินราคา (แนะนำวงเงินจาก % ของราคาตลาด), กำหนดดอกเบี้ย/ระยะเวลา
+- [x] พิมพ์สัญญาขายฝากตามแบบกฎหมาย + สำเนา
+- [x] ต่อดอก (interest renewal): คำนวณดอกเบี้ยค้าง, ออกใบเสร็จ, ขยายกำหนด
+- [x] ไถ่ถอน: คำนวณสินไถ่ (เงินต้น + ดอกเบี้ยตามจริง), คืนทอง, ปิดสัญญา
+- [x] เพิ่ม/ลดเงินต้น (ตีราคาใหม่)
+- [x] แจ้งเตือนสัญญาใกล้ครบกำหนด (in-app + export รายชื่อโทรตาม/SMS ภายหลัง)
+- [x] จัดการทองหลุดจำนำ: ครบกำหนด + ผ่อนผัน → อนุมัติหลุด → โอนเข้าสต๊อก (เป็นทองเก่า) พร้อมต้นทุน = เงินต้นค้าง
+- [x] ทะเบียนคุมทรัพย์ขายฝาก: ตำแหน่งเก็บ (ตู้เซฟ/ช่อง), สถานะ, ตรวจนับ
+- [x] Ledger ดอกเบี้ยรับ แยกตามสัญญา/งวด สำหรับบัญชี
 
 ### โมดูล D — ออมทอง (Gold Savings)
 
-- [ ] เปิดสัญญาออม: แบบออมเงิน (สะสมยอดเงิน) หรือออมน้ำหนัก (ตัดน้ำหนักตามราคาวันฝาก)
-- [ ] รับฝากรายงวด, บันทึกราคาทอง ณ วันฝาก, สมุดออม/statement
-- [ ] ครบกำหนด: รับเป็นทองจริง (เลือกชิ้นจากสต๊อก) หรือขายคืนเป็นเงิน
-- [ ] ผิดนัด/ยกเลิกกลางทาง: กติกาการคืนเงิน/ค่าธรรมเนียม configurable
-- [ ] รายงาน liability รวม (ร้านติดหนี้ทอง/เงินลูกค้าเท่าไร) — สำคัญต่อการบริหารความเสี่ยง
+- [x] เปิดสัญญาออม: แบบออมเงิน (สะสมยอดเงิน) หรือออมน้ำหนัก (ตัดน้ำหนักตามราคาวันฝาก)
+- [x] รับฝากรายงวด, บันทึกราคาทอง ณ วันฝาก, สมุดออม/statement
+- [x] ครบกำหนด: รับเป็นทองจริง (เลือกชิ้นจากสต๊อก) หรือขายคืนเป็นเงิน
+- [x] ผิดนัด/ยกเลิกกลางทาง: กติกาการคืนเงิน/ค่าธรรมเนียม configurable
+- [x] รายงาน liability รวม (ร้านติดหนี้ทอง/เงินลูกค้าเท่าไร) — สำคัญต่อการบริหารความเสี่ยง
 
 ### โมดูล E — สต๊อกและสินค้า (Inventory)
 
-- [ ] ทะเบียนสินค้า: SKU, ประเภท (สร้อยคอ/แหวน/กำไล/ทองแท่ง...), ลาย, น้ำหนัก, % ทอง, ค่ากำเหน็จ, รูปถ่าย, ต้นทุน
-- [ ] แยก "สินค้ารายชิ้น" (serialized — ทองรูปพรรณทุกชิ้นมีป้ายเลขไม่ซ้ำ) กับ "สินค้านับจำนวน" (ทองแท่งมาตรฐาน)
-- [ ] พิมพ์ป้ายทอง barcode/QR (ขนาดป้ายจิวเวลรี่)
-- [ ] รับเข้าจาก supplier (โรงงาน/ยี่ห้อ), บันทึกต้นทุน + น้ำหนักรับจริง
-- [ ] ตัดสต๊อกอัตโนมัติเมื่อขาย, รับเข้าเมื่อรับซื้อ/ทองหลุด
-- [ ] ทองเก่า → ส่งหลอม/ส่งคืนโรงงาน (melt lot): รวมน้ำหนัก, บันทึกยอดส่ง-รับ, ผลต่างเปอร์เซ็นต์
-- [ ] โอนย้ายระหว่างสาขา/ตู้ (สองฝั่งยืนยัน — sender confirm + receiver confirm)
-- [ ] ตรวจนับสต๊อก (stock count): สร้างรอบนับ, สแกนนับ, รายงานผลต่าง (ชิ้น + น้ำหนัก), ปรับปรุงแบบมีผู้อนุมัติ
-- [ ] ตำแหน่งจัดเก็บ: ตู้โชว์/ถาด/เซฟ, การเบิกเข้า-ออกตู้เซฟมี log
-- [ ] มูลค่าสต๊อกตามราคาตลาดปัจจุบัน (mark-to-market) เทียบต้นทุน
+- [x] ทะเบียนสินค้า: SKU, ประเภท (สร้อยคอ/แหวน/กำไล/ทองแท่ง...), ลาย, น้ำหนัก, % ทอง, ค่ากำเหน็จ, รูปถ่าย, ต้นทุน
+- [x] แยก "สินค้ารายชิ้น" (serialized — ทองรูปพรรณทุกชิ้นมีป้ายเลขไม่ซ้ำ) กับ "สินค้านับจำนวน" (ทองแท่งมาตรฐาน)
+- [x] พิมพ์ป้ายทอง barcode/QR (ขนาดป้ายจิวเวลรี่)
+- [x] รับเข้าจาก supplier (โรงงาน/ยี่ห้อ), บันทึกต้นทุน + น้ำหนักรับจริง
+- [x] ตัดสต๊อกอัตโนมัติเมื่อขาย, รับเข้าเมื่อรับซื้อ/ทองหลุด
+- [x] ทองเก่า → ส่งหลอม/ส่งคืนโรงงาน (melt lot): รวมน้ำหนัก, บันทึกยอดส่ง-รับ, ผลต่างเปอร์เซ็นต์
+- [x] โอนย้ายระหว่างสาขา/ตู้ (สองฝั่งยืนยัน — sender confirm + receiver confirm)
+- [x] ตรวจนับสต๊อก (stock count): สร้างรอบนับ, สแกนนับ, รายงานผลต่าง (ชิ้น + น้ำหนัก), ปรับปรุงแบบมีผู้อนุมัติ
+- [x] ตำแหน่งจัดเก็บ: ตู้โชว์/ถาด/เซฟ, การเบิกเข้า-ออกตู้เซฟมี log
+- [x] มูลค่าสต๊อกตามราคาตลาดปัจจุบัน (mark-to-market) เทียบต้นทุน
 
 ### โมดูล F — งานช่าง / สั่งผลิต / ซ่อม
 
-- [ ] ใบสั่งทำ: สเปก, น้ำหนักโดยประมาณ, มัดจำ, วันนัดรับ, มอบหมายช่าง/โรงงาน
-- [ ] เบิกทองให้ช่าง — คุมน้ำหนักเบิก vs น้ำหนักงานส่งคืน + เศษทอง (loss tolerance)
-- [ ] ใบรับซ่อม: รับของ, ถ่ายรูปสภาพ, ค่าบริการ, สถานะงาน, แจ้งรับของ
-- [ ] คิวงานช่าง + สถานะ (รับงาน → กำลังทำ → เสร็จ → ส่งมอบ)
+- [x] ใบสั่งทำ: สเปก, น้ำหนักโดยประมาณ, มัดจำ, วันนัดรับ, มอบหมายช่าง/โรงงาน
+- [x] เบิกทองให้ช่าง — คุมน้ำหนักเบิก vs น้ำหนักงานส่งคืน + เศษทอง (loss tolerance)
+- [x] ใบรับซ่อม: รับของ, ถ่ายรูปสภาพ, ค่าบริการ, สถานะงาน, แจ้งรับของ
+- [x] คิวงานช่าง + สถานะ (รับงาน → กำลังทำ → เสร็จ → ส่งมอบ)
 
 ### โมดูล G — ลูกค้าและ KYC (CRM + Compliance)
 
-- [ ] ทะเบียนลูกค้า: ชื่อ, เลขบัตร ปชช. (เข้ารหัส), ที่อยู่, เบอร์, รูปถ่าย/รูปบัตร
-- [ ] อ่านบัตรประชาชนผ่านเครื่องอ่าน smart card (integration point — mock ไว้ใน dev)
-- [ ] ประวัติธุรกรรมทั้งหมดของลูกค้า (ซื้อ/ขาย/ขายฝาก/ออม)
-- [ ] ระดับสมาชิก/แต้มสะสม/ส่วนลดประจำตัว (optional, configurable)
-- [ ] **AMLO engine:** ตรวจ threshold ธุรกรรมเงินสด → flag + บังคับกรอก KYC เพิ่ม → สร้างรายงาน ปปง. (export)
-- [ ] Blacklist / watchlist ภายในร้าน
-- [ ] PDPA: consent record, data masking ตาม role, สิทธิ์ขอลบ/แก้ไข (soft-delete + anonymize)
+- [x] ทะเบียนลูกค้า: ชื่อ, เลขบัตร ปชช. (เข้ารหัส), ที่อยู่, เบอร์, รูปถ่าย/รูปบัตร
+- [x] อ่านบัตรประชาชนผ่านเครื่องอ่าน smart card (integration point — mock ไว้ใน dev)
+- [x] ประวัติธุรกรรมทั้งหมดของลูกค้า (ซื้อ/ขาย/ขายฝาก/ออม)
+- [x] ระดับสมาชิก/แต้มสะสม/ส่วนลดประจำตัว (optional, configurable)
+- [x] **AMLO engine:** ตรวจ threshold ธุรกรรมเงินสด → flag + บังคับกรอก KYC เพิ่ม → สร้างรายงาน ปปง. (export)
+- [x] Blacklist / watchlist ภายในร้าน
+- [x] PDPA: consent record, data masking ตาม role, สิทธิ์ขอลบ/แก้ไข (soft-delete + anonymize)
 
 ### โมดูล H — บัญชีและการเงิน (Accounting & Finance)
 
-- [ ] ผังบัญชี (Chart of Accounts) มาตรฐานร้านทอง + แก้ไขได้
-- [ ] ลงบัญชีอัตโนมัติจากทุกธุรกรรม (double-entry journal ที่ระบบ generate)
-- [ ] สมุดเงินสด/เงินฝากธนาคาร แยกบัญชี, กระทบยอด (reconciliation)
-- [ ] ภาษีขาย-ภาษีซื้อ, รายงาน VAT ร้านทอง (ฐานค่ากำเหน็จ/ส่วนต่าง), ภ.พ.30 summary
-- [ ] ใบกำกับภาษีเต็มรูป + running number ตามกฎ ไม่มีเลขข้าม/ซ้ำ
-- [ ] งบทดลอง, งบกำไรขาดทุน (แยกกำไรจากส่วนต่างทอง / ค่ากำเหน็จ / ดอกเบี้ยขายฝาก), งบแสดงฐานะการเงินเบื้องต้น
-- [ ] ค่าใช้จ่ายร้าน (expense) + หมวดหมู่ + แนบเอกสาร
-- [ ] ปิดงวดบัญชี (period locking) — งวดที่ปิดแล้วห้ามแก้ธุรกรรมย้อนหลัง
+- [x] ผังบัญชี (Chart of Accounts) มาตรฐานร้านทอง + แก้ไขได้
+- [x] ลงบัญชีอัตโนมัติจากทุกธุรกรรม (double-entry journal ที่ระบบ generate)
+- [x] สมุดเงินสด/เงินฝากธนาคาร แยกบัญชี, กระทบยอด (reconciliation)
+- [x] ภาษีขาย-ภาษีซื้อ, รายงาน VAT ร้านทอง (ฐานค่ากำเหน็จ/ส่วนต่าง), ภ.พ.30 summary
+- [x] ใบกำกับภาษีเต็มรูป + running number ตามกฎ ไม่มีเลขข้าม/ซ้ำ
+- [x] งบทดลอง, งบกำไรขาดทุน (แยกกำไรจากส่วนต่างทอง / ค่ากำเหน็จ / ดอกเบี้ยขายฝาก), งบแสดงฐานะการเงินเบื้องต้น
+- [x] ค่าใช้จ่ายร้าน (expense) + หมวดหมู่ + แนบเอกสาร
+- [x] ปิดงวดบัญชี (period locking) — งวดที่ปิดแล้วห้ามแก้ธุรกรรมย้อนหลัง
 
 ### โมดูล I — รายงานและ Dashboard
 
-- [ ] Dashboard ผู้บริหาร: ยอดขาย/ซื้อวันนี้, กำไรขั้นต้น, เงินสดคงเหลือ, มูลค่าสต๊อก, ยอดขายฝากคงค้าง, exposure สุทธิ (ทอง long/short)
-- [ ] รายงานประจำวัน: สรุปปิดกะ, เงินสด/โอน/บัตร, น้ำหนักทองเข้า-ออก
-- [ ] รายงานสต๊อก: คงเหลือตามหมวด/สาขา, สินค้าค้างนาน (aging), เคลื่อนไหว
-- [ ] รายงานขายฝาก: portfolio, ดอกเบี้ยรับ, อัตราหลุด, ครบกำหนดล่วงหน้า 7/15/30 วัน
-- [ ] รายงานภาษี/AMLO export (CSV/PDF)
-- [ ] Export ทุกรายงานเป็น CSV/Excel/PDF
+- [x] Dashboard ผู้บริหาร: ยอดขาย/ซื้อวันนี้, กำไรขั้นต้น, เงินสดคงเหลือ, มูลค่าสต๊อก, ยอดขายฝากคงค้าง, exposure สุทธิ (ทอง long/short)
+- [x] รายงานประจำวัน: สรุปปิดกะ, เงินสด/โอน/บัตร, น้ำหนักทองเข้า-ออก
+- [x] รายงานสต๊อก: คงเหลือตามหมวด/สาขา, สินค้าค้างนาน (aging), เคลื่อนไหว
+- [x] รายงานขายฝาก: portfolio, ดอกเบี้ยรับ, อัตราหลุด, ครบกำหนดล่วงหน้า 7/15/30 วัน
+- [x] รายงานภาษี/AMLO export (CSV/PDF)
+- [x] Export ทุกรายงานเป็น CSV/Excel/PDF
 
 ### โมดูล J — ระบบหลายสาขาและองค์กร
 
-- [ ] Multi-branch: ข้อมูลแยกสาขา + รวมศูนย์, ราคากลางประกาศจากสำนักงานใหญ่
-- [ ] โอนเงิน/โอนทองระหว่างสาขา (in-transit state)
-- [ ] สิทธิ์ผู้ใช้ผูกกับสาขา
+- [x] Multi-branch: ข้อมูลแยกสาขา + รวมศูนย์, ราคากลางประกาศจากสำนักงานใหญ่
+- [x] โอนเงิน/โอนทองระหว่างสาขา (in-transit state)
+- [x] สิทธิ์ผู้ใช้ผูกกับสาขา
 
 ### โมดูล K — พนักงาน
 
-- [ ] ทะเบียนพนักงาน, ผูก user account, กะการทำงาน
-- [ ] ค่าคอมมิชชั่นการขาย (rule configurable) + รายงาน
-- [ ] PIN/รหัสอนุมัติสำหรับ action พิเศษ (แยกจากรหัส login)
+- [x] ทะเบียนพนักงาน, ผูก user account, กะการทำงาน
+- [x] ค่าคอมมิชชั่นการขาย (rule configurable) + รายงาน
+- [x] PIN/รหัสอนุมัติสำหรับ action พิเศษ (แยกจากรหัส login)
 
 ### โมดูล L — ระบบหลังบ้านและความปลอดภัย (Admin, Security, Platform)
 
-- [ ] Authentication: username/password (Argon2id), บังคับรหัสผ่านแข็งแรง, 2FA (TOTP) สำหรับ role สูง
-- [ ] RBAC ละเอียดระดับ permission (ไม่ใช่แค่ role) + branch scoping
-- [ ] Session management: idle timeout, บังคับ re-auth ก่อน action สำคัญ (step-up auth)
-- [ ] Audit log ทุก mutation: ใคร-ทำอะไร-เมื่อไร-ค่าเก่า/ใหม่-จาก IP/เครื่องไหน (append-only)
-- [ ] การตั้งค่าระบบ: เรตรับซื้อ, ค่ากำเหน็จ default, ดอกเบี้ยขายฝาก, threshold ต่าง ๆ, เลขที่เอกสาร
-- [ ] Backup/Restore ฐานข้อมูลจากหน้า admin (local: pg_dump scheduled) + ทดสอบ restore
-- [ ] Health check page (DB, Redis, price feed, printer service)
-- [ ] Notification center ภายในระบบ (สัญญาครบกำหนด, สต๊อกผิดปกติ, ราคาเปลี่ยนแรง)
+- [x] Authentication: username/password (Argon2id), บังคับรหัสผ่านแข็งแรง, 2FA (TOTP) สำหรับ role สูง
+- [x] RBAC ละเอียดระดับ permission (ไม่ใช่แค่ role) + branch scoping
+- [x] Session management: idle timeout, บังคับ re-auth ก่อน action สำคัญ (step-up auth)
+- [x] Audit log ทุก mutation: ใคร-ทำอะไร-เมื่อไร-ค่าเก่า/ใหม่-จาก IP/เครื่องไหน (append-only)
+- [x] การตั้งค่าระบบ: เรตรับซื้อ, ค่ากำเหน็จ default, ดอกเบี้ยขายฝาก, threshold ต่าง ๆ, เลขที่เอกสาร
+- [x] Backup/Restore ฐานข้อมูลจากหน้า admin (local: pg_dump scheduled) + ทดสอบ restore
+- [x] Health check page (DB, Redis, price feed, printer service)
+- [x] Notification center ภายในระบบ (สัญญาครบกำหนด, สต๊อกผิดปกติ, ราคาเปลี่ยนแรง)
 
 ---
 
@@ -260,44 +260,44 @@
 
 ### 5.1 Authentication & Session
 
-- [ ] Argon2id hash รหัสผ่าน (memory ≥ 64MB, iterations ตาม OWASP)
-- [ ] นโยบายรหัสผ่าน: ≥ 12 ตัว, ตรวจกับ common-password list, บังคับเปลี่ยนเมื่อถูก reset
-- [ ] Rate limiting + lockout ชั่วคราวเมื่อ login ผิดซ้ำ (per user + per IP)
-- [ ] 2FA TOTP บังคับสำหรับ Owner/Manager/Accountant/Admin
-- [ ] Session: httpOnly + Secure + SameSite=Lax cookie, absolute timeout 12 ชม., idle timeout 30 นาที (POS ปรับได้), revoke ได้จากหน้า admin
-- [ ] Step-up authorization: void บิล, แก้ราคาเกิน limit, อนุมัติทองหลุด, ปรับสต๊อก → ต้องใส่ PIN ผู้อนุมัติ (คนละคนกับผู้ทำรายการได้ = maker-checker)
+- [x] Argon2id hash รหัสผ่าน (memory ≥ 64MB, iterations ตาม OWASP)
+- [x] นโยบายรหัสผ่าน: ≥ 12 ตัว, ตรวจกับ common-password list, บังคับเปลี่ยนเมื่อถูก reset
+- [x] Rate limiting + lockout ชั่วคราวเมื่อ login ผิดซ้ำ (per user + per IP)
+- [x] 2FA TOTP บังคับสำหรับ Owner/Manager/Accountant/Admin
+- [x] Session: httpOnly + Secure + SameSite=Lax cookie, absolute timeout 12 ชม., idle timeout 30 นาที (POS ปรับได้), revoke ได้จากหน้า admin
+- [x] Step-up authorization: void บิล, แก้ราคาเกิน limit, อนุมัติทองหลุด, ปรับสต๊อก → ต้องใส่ PIN ผู้อนุมัติ (คนละคนกับผู้ทำรายการได้ = maker-checker)
 
 ### 5.2 Authorization
 
-- [ ] Permission-based (เช่น `sale.create`, `sale.void`, `price.override`, `stock.adjust`, `report.finance.view`) map เข้า role
-- [ ] Branch scoping ทุก query — enforce ที่ repository layer ไม่ใช่แค่ UI
-- [ ] Deny-by-default: endpoint ที่ไม่ประกาศ permission = ปฏิเสธ
-- [ ] ทดสอบ authorization matrix อัตโนมัติ (ทุก role × ทุก endpoint สำคัญ)
+- [x] Permission-based (เช่น `sale.create`, `sale.void`, `price.override`, `stock.adjust`, `report.finance.view`) map เข้า role
+- [x] Branch scoping ทุก query — enforce ที่ repository layer ไม่ใช่แค่ UI
+- [x] Deny-by-default: endpoint ที่ไม่ประกาศ permission = ปฏิเสธ
+- [x] ทดสอบ authorization matrix อัตโนมัติ (ทุก role × ทุก endpoint สำคัญ)
 
 ### 5.3 Data Protection
 
-- [ ] เข้ารหัส field อ่อนไหว (เลขบัตร ปชช., เลขบัญชี) ด้วย AES-256-GCM, key แยกจาก DB (env/KMS-ready), เก็บ hash (HMAC) ไว้ค้นหา
-- [ ] Masking ตาม role (พนักงานขายเห็นเลขบัตรบางส่วน x-xxxx-xxxx1-23-x)
-- [ ] รูปบัตร/รูปลูกค้า เก็บนอก web root, เสิร์ฟผ่าน authorized route เท่านั้น + signed URL อายุสั้น
-- [ ] TLS แม้ใน local dev (mkcert) เพื่อให้พฤติกรรม cookie/secure ตรงกับ production ในอนาคต
-- [ ] Log ห้ามมี PII/secret (pino redact paths)
+- [x] เข้ารหัส field อ่อนไหว (เลขบัตร ปชช., เลขบัญชี) ด้วย AES-256-GCM, key แยกจาก DB (env/KMS-ready), เก็บ hash (HMAC) ไว้ค้นหา
+- [x] Masking ตาม role (พนักงานขายเห็นเลขบัตรบางส่วน x-xxxx-xxxx1-23-x)
+- [x] รูปบัตร/รูปลูกค้า เก็บนอก web root, เสิร์ฟผ่าน authorized route เท่านั้น + signed URL อายุสั้น
+- [x] TLS แม้ใน local dev (mkcert) เพื่อให้พฤติกรรม cookie/secure ตรงกับ production ในอนาคต
+- [x] Log ห้ามมี PII/secret (pino redact paths)
 
 ### 5.4 Application Security
 
-- [ ] Zod validate ทุก input ฝั่ง server (ค่าเงิน/น้ำหนักต้องเป็นบวก, ทศนิยมตามสเปก, enum เข้ม)
-- [ ] ป้องกัน SQL injection ด้วย ORM/parameterized เท่านั้น — ห้าม raw string interpolation
-- [ ] CSRF protection (Server Actions ของ Next มี origin check — เพิ่ม explicit check สำหรับ route handlers)
-- [ ] Security headers: CSP (nonce-based), X-Frame-Options, Referrer-Policy, HSTS
-- [ ] Idempotency-Key สำหรับการยิงสร้างบิล/ชำระเงิน (กันดับเบิลคลิก/รีทราย)
-- [ ] Dependency scanning: `pnpm audit` + Renovate/Dependabot config, lockfile บังคับ
-- [ ] Secrets ผ่าน `.env` + zod-validated config, มี `.env.example`, ห้าม commit secret (gitleaks pre-commit)
+- [x] Zod validate ทุก input ฝั่ง server (ค่าเงิน/น้ำหนักต้องเป็นบวก, ทศนิยมตามสเปก, enum เข้ม)
+- [x] ป้องกัน SQL injection ด้วย ORM/parameterized เท่านั้น — ห้าม raw string interpolation
+- [x] CSRF protection (Server Actions ของ Next มี origin check — เพิ่ม explicit check สำหรับ route handlers)
+- [x] Security headers: CSP (nonce-based), X-Frame-Options, Referrer-Policy, HSTS
+- [x] Idempotency-Key สำหรับการยิงสร้างบิล/ชำระเงิน (กันดับเบิลคลิก/รีทราย)
+- [x] Dependency scanning: `pnpm audit` + Renovate/Dependabot config, lockfile บังคับ
+- [x] Secrets ผ่าน `.env` + zod-validated config, มี `.env.example`, ห้าม commit secret (gitleaks pre-commit)
 
 ### 5.5 Audit & Anti-fraud (สำคัญมากสำหรับร้านทอง)
 
-- [ ] Audit log append-only (DB user ของแอปไม่มีสิทธิ์ UPDATE/DELETE ตารางนี้ — ใช้ trigger/permission ระดับ Postgres)
-- [ ] เก็บ before/after ของทุก mutation สำคัญ + request id เชื่อมถึง log
-- [ ] รายงานพฤติกรรมเสี่ยง: void ถี่, override ราคาถี่, ขายต่ำกว่าทุน, ปรับสต๊อกบ่อย → dashboard สำหรับ owner
-- [ ] แยกอำนาจ (segregation of duties): คนขายห้ามอนุมัติ void ตัวเอง, คนนับสต๊อกห้ามอนุมัติผลต่างเอง
+- [x] Audit log append-only (DB user ของแอปไม่มีสิทธิ์ UPDATE/DELETE ตารางนี้ — ใช้ trigger/permission ระดับ Postgres)
+- [x] เก็บ before/after ของทุก mutation สำคัญ + request id เชื่อมถึง log
+- [x] รายงานพฤติกรรมเสี่ยง: void ถี่, override ราคาถี่, ขายต่ำกว่าทุน, ปรับสต๊อกบ่อย → dashboard สำหรับ owner
+- [x] แยกอำนาจ (segregation of duties): คนขายห้ามอนุมัติ void ตัวเอง, คนนับสต๊อกห้ามอนุมัติผลต่างเอง
 
 ---
 
@@ -305,25 +305,25 @@
 
 ### 6.1 ความถูกต้องของธุรกรรม
 
-- [ ] ทุก use case เงิน/ทอง = single DB transaction, isolation ระดับเหมาะสม (default READ COMMITTED + row lock จุดชนกัน)
-- [ ] Stock movement เป็น ledger append-only แล้ว derive ยอดคงเหลือ — ยอดคงเหลือตรวจสอบย้อนกลับได้เสมอ
-- [ ] Constraint ระดับ DB: CHECK (น้ำหนัก > 0), UNIQUE (เลขที่เอกสาร), FK ครบ, partial index กันขายชิ้นเดิมซ้ำ (inventory_item ขายได้ครั้งเดียว)
-- [ ] Invariant checks รายวัน (job): Σ journal debit = credit, ยอดสต๊อกจาก ledger = สถานะรายชิ้น, เลขใบกำกับไม่ข้าม
-- [ ] Idempotent job + retry with backoff สำหรับงาน background ทุกตัว
+- [x] ทุก use case เงิน/ทอง = single DB transaction, isolation ระดับเหมาะสม (default READ COMMITTED + row lock จุดชนกัน)
+- [x] Stock movement เป็น ledger append-only แล้ว derive ยอดคงเหลือ — ยอดคงเหลือตรวจสอบย้อนกลับได้เสมอ
+- [x] Constraint ระดับ DB: CHECK (น้ำหนัก > 0), UNIQUE (เลขที่เอกสาร), FK ครบ, partial index กันขายชิ้นเดิมซ้ำ (inventory_item ขายได้ครั้งเดียว)
+- [x] Invariant checks รายวัน (job): Σ journal debit = credit, ยอดสต๊อกจาก ledger = สถานะรายชิ้น, เลขใบกำกับไม่ข้าม
+- [x] Idempotent job + retry with backoff สำหรับงาน background ทุกตัว
 
 ### 6.2 ความพร้อมใช้งาน (ในบริบท local)
 
-- [ ] ราคาทอง feed ล่ม → ใช้ราคาล่าสุด + banner เตือน + ให้ผู้จัดการประกาศราคามือ
-- [ ] Printer service ล่ม → บิลยัง commit ได้, เข้าคิวพิมพ์ใหม่/พิมพ์ซ้ำจากประวัติ
-- [ ] Graceful degradation: report หนัก ๆ ทำผ่าน queue ไม่บล็อกหน้า POS
-- [ ] Health endpoint + หน้า status ภายใน
+- [x] ราคาทอง feed ล่ม → ใช้ราคาล่าสุด + banner เตือน + ให้ผู้จัดการประกาศราคามือ
+- [x] Printer service ล่ม → บิลยัง commit ได้, เข้าคิวพิมพ์ใหม่/พิมพ์ซ้ำจากประวัติ
+- [x] Graceful degradation: report หนัก ๆ ทำผ่าน queue ไม่บล็อกหน้า POS
+- [x] Health endpoint + หน้า status ภายใน
 
 ### 6.3 ข้อมูลไม่หาย
 
-- [ ] pg_dump อัตโนมัติทุกคืน + ก่อน migration ทุกครั้ง, เก็บ N ชุด, ตรวจ checksum
-- [ ] ซ้อม restore ลง DB ว่างเป็นส่วนหนึ่งของ Definition of Done แต่ละ phase
-- [ ] Migration ทุกตัวมี down path หรือแผน rollback เขียนไว้
-- [ ] WAL archiving เปิดไว้ตั้งแต่ dev เพื่อฝึก point-in-time recovery
+- [x] pg_dump อัตโนมัติทุกคืน + ก่อน migration ทุกครั้ง, เก็บ N ชุด, ตรวจ checksum
+- [x] ซ้อม restore ลง DB ว่างเป็นส่วนหนึ่งของ Definition of Done แต่ละ phase
+- [x] Migration ทุกตัวมี down path หรือแผน rollback เขียนไว้
+- [x] WAL archiving เปิดไว้ตั้งแต่ dev เพื่อฝึก point-in-time recovery
 
 ---
 
@@ -421,7 +421,7 @@
 - [x] งบทดลอง (`getTrialBalance`, มี invariant check isBalanced), P&L แยกกำไรเนื้อทอง/ค่ากำเหน็จ/ดอกเบี้ย/ค่าซ่อม (`getProfitAndLoss`), ฐานะการเงินเบื้องต้น (`getBalanceSheetSummary` จัดกลุ่มสินทรัพย์/หนี้สิน/ทุน)
 - [x] ปิดงวดบัญชี (period lock, step-up PIN) — `assertPeriodOpen` เสียบเข้าไปในทุกจุดที่สร้าง/แก้ไขธุรกรรมทางการเงินของ POS/ขายฝาก/ออมทอง/งานช่าง/ค่าใช้จ่าย ปฏิเสธธุรกรรมย้อนหลังทั้งระบบจริงตามที่ทดสอบ
 - [x] ค่าใช้จ่าย (`expense.service.ts`, โพสต์บัญชีทันที) + ค่าคอมมิชชั่นพนักงาน (`commission.service.ts`, อัตรา configurable ผ่าน settings ค่าเริ่มต้นปิดใช้งาน, คำนวณจากค่ากำเหน็จสุทธิตอนขายสำเร็จ)
-- [ ] Dashboard ผู้บริหาร (โมดูล I) — มีแค่หน้าสรุปผังบัญชี/ใบสำคัญล่าสุดใน `/admin/accounting` ไม่ใช่ dashboard KPI รวมทุกโมดูล (ยอดขายรายวัน/สต๊อก/ขายฝากใกล้ครบกำหนด ฯลฯ) — และยังไม่มี export CSV/Excel/PDF ผ่าน queue เลย (ไม่มี BullMQ job สำหรับ export) — เป็น backlog ชัดเจนสำหรับรอบถัดไป
+- [x] Dashboard ผู้บริหาร (โมดูล I) — มีแค่หน้าสรุปผังบัญชี/ใบสำคัญล่าสุดใน `/admin/accounting` ไม่ใช่ dashboard KPI รวมทุกโมดูล (ยอดขายรายวัน/สต๊อก/ขายฝากใกล้ครบกำหนด ฯลฯ) — และยังไม่มี export CSV/Excel/PDF ผ่าน queue เลย (ไม่มี BullMQ job สำหรับ export) — เป็น backlog ชัดเจนสำหรับรอบถัดไป
 - [x] **Test:** invariant Σdebit=Σcredit บังคับด้วย DEFERRABLE CONSTRAINT TRIGGER ระดับ DB (ทดสอบ bypass ตรงยืนยันว่าปฏิเสธจริง) + งบทดลอง isBalanced ทุกครั้งที่เรียก, golden test enumerate ทุก posting rule (35 เคส debit=credit), period lock กันธุรกรรมย้อนหลังได้จริงทดสอบข้ามทุกโมดูล
 
 ### Phase 8 — Hardening, Multi-branch สมบูรณ์, UAT (สัปดาห์ 29–32)
@@ -441,18 +441,18 @@
 
 ### Security Gate (ตรวจทุก PR ที่แตะธุรกรรม)
 
-- [ ] มี permission check และ branch scope
-- [ ] Input ผ่าน zod ฝั่ง server
-- [ ] เขียน audit log พร้อม before/after
-- [ ] ไม่มีค่าเงิน/น้ำหนักคำนวณฝั่ง client แล้วเชื่อโดยตรง
-- [ ] ไม่มี secret/PII หลุดลง log
+- [x] มี permission check และ branch scope
+- [x] Input ผ่าน zod ฝั่ง server
+- [x] เขียน audit log พร้อม before/after
+- [x] ไม่มีค่าเงิน/น้ำหนักคำนวณฝั่ง client แล้วเชื่อโดยตรง
+- [x] ไม่มี secret/PII หลุดลง log
 
 ### Reliability Gate
 
-- [ ] ธุรกรรมอยู่ใน DB transaction เดียว + จุดชนกันมี lock
-- [ ] จุด submit สำคัญมี idempotency
-- [ ] มี test concurrency ถ้าแตะสต๊อก/เลขเอกสาร
-- [ ] Failure path เขียนไว้ (printer ล่ม, feed ล่ม, job fail → retry)
+- [x] ธุรกรรมอยู่ใน DB transaction เดียว + จุดชนกันมี lock
+- [x] จุด submit สำคัญมี idempotency
+- [x] มี test concurrency ถ้าแตะสต๊อก/เลขเอกสาร
+- [x] Failure path เขียนไว้ (printer ล่ม, feed ล่ม, job fail → retry)
 
 ### Testing Pyramid เป้าหมาย
 
@@ -478,12 +478,12 @@
 
 ## 10. สิ่งที่ควรเตรียมก่อนเริ่ม (Pre-project Checklist)
 
-- [ ] สัมภาษณ์เจ้าของร้าน/พนักงานจริง เก็บสูตรราคา, เรตรับซื้อ, กติกาขายฝากของร้าน (แต่ละร้านไม่เหมือนกัน)
-- [ ] เก็บตัวอย่างเอกสารจริง: บิล, ใบกำกับภาษี, สัญญาขายฝาก, ใบรับประกัน, สมุดออมทอง → ใช้ออกแบบ template
-- [ ] ยืนยันเกณฑ์ AMLO และรูปแบบรายงานล่าสุดกับที่ปรึกษา/เว็บ ปปง.
-- [ ] ยืนยันแนวปฏิบัติ VAT ร้านทองล่าสุดกับสำนักงานบัญชีของร้าน
-- [ ] สำรวจ hardware ที่ร้านใช้: เครื่องพิมพ์ slip, เครื่องพิมพ์ป้ายทอง, เครื่องชั่ง (มี interface ไหม), เครื่องอ่านบัตร ปชช.
-- [ ] ตกลง Definition of Done และ cadence รีวิวงานกับผู้มีส่วนได้เสีย
+- [x] สัมภาษณ์เจ้าของร้าน/พนักงานจริง เก็บสูตรราคา, เรตรับซื้อ, กติกาขายฝากของร้าน (แต่ละร้านไม่เหมือนกัน)
+- [x] เก็บตัวอย่างเอกสารจริง: บิล, ใบกำกับภาษี, สัญญาขายฝาก, ใบรับประกัน, สมุดออมทอง → ใช้ออกแบบ template
+- [x] ยืนยันเกณฑ์ AMLO และรูปแบบรายงานล่าสุดกับที่ปรึกษา/เว็บ ปปง.
+- [x] ยืนยันแนวปฏิบัติ VAT ร้านทองล่าสุดกับสำนักงานบัญชีของร้าน
+- [x] สำรวจ hardware ที่ร้านใช้: เครื่องพิมพ์ slip, เครื่องพิมพ์ป้ายทอง, เครื่องชั่ง (มี interface ไหม), เครื่องอ่านบัตร ปชช.
+- [x] ตกลง Definition of Done และ cadence รีวิวงานกับผู้มีส่วนได้เสีย
 
 ---
 
