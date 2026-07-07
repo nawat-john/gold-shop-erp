@@ -428,12 +428,12 @@
 
 - [x] โอนเงิน/ทองข้ามสาขา end-to-end + รายงานรวมศูนย์ — ของ (`transfer.service.ts`/`BranchTransfer`) มีอยู่แล้วตั้งแต่ Phase 3; เพิ่มเงินสด (`cash-transfer.service.ts`/`CashTransfer`, 2-step DRAFT→IN_TRANSIT→COMPLETED, ส่งเงินต้องมี PIN อนุมัติ maker-checker) — ตั้งใจไม่ลงบัญชี (GL) เพราะผังบัญชีมีบัญชี "เงินสด" ใบเดียวรวมทุกสาขา ย้ายเงินข้ามลิ้นชักไม่กระทบเงินสดรวมบริษัท; รายงานรวมศูนย์มีอยู่แล้วโดยปริยาย (ไม่มี branchId มาก่อนจึงรวมทุกสาขาเสมอ) — เพิ่ม `branchId` ลง `JournalEntry` ให้ดูแยกรายสาขาได้ด้วย (`/admin/accounting/reports` มี selector สาขา); ปิดช่องโหว่เดิมที่ permission check การโอนย้ายสินค้า/เงินสดไม่ผูกกับสาขาจริงของธุรกรรม (`requirePermission` ไม่เคยส่ง branchId มาก่อน)
 - [x] Fraud dashboard (void/override/adjust ผิดปกติ) — `/admin/fraud`: อันดับอัตรา void ต่อพนักงาน, อันดับผู้อนุมัติปรับสต๊อก (จำนวนครั้ง+มูลค่า), กิจกรรมนอกเวลาทำการ — สูตรตัดสิน "ผิดปกติ" เป็น pure function ที่ `fraud-scoring.ts`, threshold configurable ผ่าน settings; **price override ยังไม่มีเป็นฟีเจอร์จริงในระบบ** (ไม่มี permission/approval flow ให้แก้ราคาบิลมือ) จึงยังไม่มีสัญญาณ fraud ด้านนี้ — เป็นช่องว่างที่ต้องสร้างฟีเจอร์ก่อนจึงจะมีรายงานได้
-- [ ] Backup อัตโนมัติ + ซ้อม restore + เอกสาร runbook
-- [ ] Security pass: ทบทวน authorization matrix, CSP, dependency audit, ทดลอง threat scenario หลัก (พนักงานทุจริต, ยิง API ตรง, session hijack ใน LAN)
-- [ ] Load test หน้า POS (จำลอง 10 เครื่องพร้อมกัน) + ปรับ index/query
-- [ ] Seed ข้อมูลสาธิตสมจริง + คู่มือผู้ใช้ต่อ role + วิดีโอ/เอกสาร training
-- [ ] UAT script ตามธุรกรรมจริง 1 วันเต็ม (เปิดกะ→ขาย→รับซื้อ→ขายฝาก→ต่อดอก→ปิดกะ→ปิดวัน→รายงาน)
-- [ ] เก็บ tech debt + จัดทำ backlog สำหรับเฟส deployment ในอนาคต (แค่เอกสาร ไม่ลงมือ)
+- [x] Backup อัตโนมัติ + ซ้อม restore + เอกสาร runbook
+- [x] Security pass: ทบทวน authorization matrix, CSP, dependency audit, ทดลอง threat scenario หลัก (พนักงานทุจริต, ยิง API ตรง, session hijack ใน LAN)
+- [x] Load test หน้า POS (จำลอง 10 เครื่องพร้อมกัน) + ปรับ index/query
+- [x] Seed ข้อมูลสาธิตสมจริง + คู่มือผู้ใช้ต่อ role + วิดีโอ/เอกสาร training
+- [x] UAT script ตามธุรกรรมจริง 1 วันเต็ม (เปิดกะ→ขาย→รับซื้อ→ขายฝาก→ต่อดอก→ปิดกะ→ปิดวัน→รายงาน)
+- [x] เก็บ tech debt + จัดทำ backlog สำหรับเฟส deployment ในอนาคต (แค่เอกสาร ไม่ลงมือ)
 
 ---
 
